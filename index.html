@@ -16,37 +16,56 @@
   --txt-hi:#f0f4fa; --txt-md:#7a8fa8; --txt-lo:#4a5f74;
   --accent:#2ab5a5; --acc-dim:rgba(42,181,165,.12);
   --grid:#1c2635; --pos:#3dbdaa; --neg:#f07060;
+  --body-txt:#dde6f0;
+  --cors-bg:#152015; --cors-border:#2e5e2e; --cors-txt:#7acc7a;
+  --cors-err-bg:#1a0d0d; --cors-err-border:#6a2020; --cors-err-txt:#e07070;
+  --tooltip-bg:#1e2d40; --tooltip-border:#2e3f52;
+}
+[data-theme="light"]{
+  --bg-base:#f4f6f9; --bg-panel:#ffffff; --bg-input:#eef1f6;
+  --border:#c8d2e0; --border-sub:#d8dee8;
+  --txt-hi:#1a2230; --txt-md:#5a6b80; --txt-lo:#8a96a8;
+  --accent:#1f9588; --acc-dim:rgba(31,149,136,.10);
+  --grid:#e4e9f0; --pos:#1f9588; --neg:#d9483a;
+  --body-txt:#222a36;
+  --cors-bg:#eef8ee; --cors-border:#a8d8a8; --cors-txt:#2d7a2d;
+  --cors-err-bg:#fdeeec; --cors-err-border:#e8b0a8; --cors-err-txt:#b8392a;
+  --tooltip-bg:#ffffff; --tooltip-border:#c8d2e0;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{background:var(--bg-base);}
-body{font-family:'IBM Plex Mono',monospace;color:#dde6f0;padding:24px;min-height:100vh;}
+body{font-family:'IBM Plex Mono',monospace;color:var(--body-txt);padding:24px;min-height:100vh;transition:background .2s,color .2s;}
 
 .header{display:flex;align-items:baseline;gap:16px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);}
-.title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;color:var(--txt-hi);}
-.subtitle{font-size:10px;color:var(--txt-md);letter-spacing:1.5px;text-transform:uppercase;}
+.theme-toggle{margin-left:auto;background:var(--bg-input);border:1px solid var(--border);color:var(--txt-md);
+  font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.5px;padding:7px 16px;
+  border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;align-self:center;}
+.theme-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.title{font-family:'Bebas Neue',sans-serif;font-size:51px;letter-spacing:3px;color:var(--txt-hi);}
+.subtitle{font-size:15px;color:var(--txt-md);letter-spacing:1.5px;text-transform:uppercase;}
 
 /* CORS bar */
-.cors-bar{background:#152015;border:1px solid #2e5e2e;border-radius:6px;padding:10px 16px;margin-bottom:10px;
-  font-size:10px;color:#7acc7a;letter-spacing:.8px;line-height:1.7;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.cors-bar{background:var(--cors-bg);border:1px solid var(--cors-border);border-radius:6px;padding:10px 16px;margin-bottom:10px;
+  font-size:15px;color:var(--cors-txt);letter-spacing:.8px;line-height:1.7;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .cors-dot{width:8px;height:8px;border-radius:50%;background:#3dbd3d;flex-shrink:0;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .cors-txt{flex:1;}
 .test-cors{background:#1a3a1a;border:1px solid #3dbd3d;color:#5dd85d;font-family:'IBM Plex Mono',monospace;
-  font-size:10px;letter-spacing:1px;padding:5px 14px;border-radius:4px;cursor:pointer;text-transform:uppercase;
+  font-size:15px;letter-spacing:1px;padding:5px 14px;border-radius:4px;cursor:pointer;text-transform:uppercase;
   transition:all .15s;white-space:nowrap;}
 .test-cors:hover{background:#3dbd3d;color:#0f1318;}
 
 /* CORS error box */
-.cors-error{display:none;background:#1a0d0d;border:1px solid #6a2020;border-radius:6px;
-  padding:14px 18px;margin-bottom:12px;font-size:11px;color:#e07070;line-height:1.9;}
+.cors-error{display:none;background:var(--cors-err-bg);border:1px solid var(--cors-err-border);border-radius:6px;
+  padding:14px 18px;margin-bottom:12px;font-size:16.5px;color:var(--cors-err-txt);line-height:1.9;}
 .cors-error strong{color:#f09090;}
 .cors-error ol{margin:8px 0 8px 18px;color:#c06060;}
 .cors-error ol li{margin-bottom:2px;}
 .cors-error a{color:#5aacdf;text-decoration:none;border-bottom:1px dotted #5aacdf;}
 .cors-error a:hover{color:#8acff5;}
-.cors-err-title{font-size:12px;font-weight:600;color:#f09090;margin-bottom:6px;letter-spacing:.5px;}
+.cors-err-title{font-size:18px;font-weight:600;color:#f09090;margin-bottom:6px;letter-spacing:.5px;}
 
-.sec-label{font-size:9px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.sec-label{font-size:13.5px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
 
 /* Ticker row */
 .ticker-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
@@ -55,33 +74,33 @@ body{font-family:'IBM Plex Mono',monospace;color:#dde6f0;padding:24px;min-height
   width:12px;height:12px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.25);
   transition:transform .15s,border-color .15s;z-index:2;}
 .ticker-dot:hover{transform:translateY(-50%) scale(1.3);border-color:rgba(255,255,255,.65);}
-.cpop{position:absolute;left:0;top:calc(100% + 6px);background:#1e2d40;border:1px solid var(--border);
-  border-radius:8px;padding:12px;z-index:200;display:none;box-shadow:0 8px 32px rgba(0,0,0,.7);width:220px;}
+.cpop{position:absolute;left:0;top:calc(100% + 6px);background:var(--tooltip-bg);border:1px solid var(--border);
+  border-radius:8px;padding:14px;z-index:200;display:none;box-shadow:0 8px 32px rgba(0,0,0,.7);width:280px;}
 .cpop.open{display:block;}
-.cpop-label{font-size:9px;color:var(--txt-md);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
-.swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;}
-.swatch{width:20px;height:20px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s;}
-.swatch:hover{transform:scale(1.25);border-color:rgba(255,255,255,.7);}
-.swatch.sel{border-color:#fff;}
-.cpop-custom-label{font-size:9px;color:var(--txt-md);letter-spacing:1px;margin-bottom:4px;}
+.cpop-label{font-size:13.5px;color:var(--txt-md);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.swatches{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-bottom:10px;}
+.swatch{width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s;}
+.swatch:hover{transform:scale(1.3);border-color:rgba(255,255,255,.7);z-index:5;}
+.swatch.sel{border-color:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.3);}
+.cpop-custom-label{font-size:13.5px;color:var(--txt-md);letter-spacing:1px;margin-bottom:4px;}
 .cpop-native{width:100%;height:30px;border:1px solid var(--border);border-radius:4px;background:var(--bg-base);cursor:pointer;padding:2px;}
 .ticker-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--txt-hi);
-  font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;letter-spacing:2px;
+  font-family:'IBM Plex Mono',monospace;font-size:22.5px;font-weight:600;letter-spacing:2px;
   padding:10px 10px 10px 30px;border-radius:5px;text-transform:uppercase;outline:none;transition:border-color .2s;}
 .ticker-input:focus{border-color:var(--accent);}
 .ticker-input::placeholder{color:var(--txt-lo);font-weight:400;letter-spacing:1px;}
 
 /* Controls */
 .ctrl-row{display:grid;grid-template-columns:175px 175px 160px 220px;gap:10px;align-items:flex-end;margin-bottom:16px;}
-input[type="date"],.inv-input,.sel-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:#dde6f0;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 10px;border-radius:5px;outline:none;
+input[type="date"],.inv-input,.sel-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--body-txt);
+  font-family:'IBM Plex Mono',monospace;font-size:18px;padding:8px 10px;border-radius:5px;outline:none;
   transition:border-color .2s;color-scheme:dark;}
 input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--accent);}
 .sel-input{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8fa8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer;}
 .sel-input option{background:#1a2030;}
 
 .run-btn{background:#0f2e2c;border:1px solid var(--accent);color:var(--accent);font-family:'IBM Plex Mono',monospace;
-  font-size:12px;font-weight:600;letter-spacing:1.5px;padding:9px 24px;border-radius:5px;cursor:pointer;
+  font-size:18px;font-weight:600;letter-spacing:1.5px;padding:9px 24px;border-radius:5px;cursor:pointer;
   text-transform:uppercase;transition:all .15s;white-space:nowrap;}
 .run-btn:hover{background:var(--accent);color:var(--bg-base);}
 .run-btn:disabled{opacity:.4;cursor:not-allowed;}
@@ -89,47 +108,47 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 /* Toggles row */
 .tgl-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
 .tgl{background:var(--bg-input);border:1px solid var(--border-sub);color:var(--txt-md);
-  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:6px 14px;
+  font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:1px;padding:6px 14px;
   border-radius:4px;cursor:pointer;text-transform:uppercase;transition:all .15s;}
-.tgl:hover{color:#dde6f0;border-color:var(--border);}
+.tgl:hover{color:var(--body-txt);border-color:var(--border);}
 .tgl.on{border-color:var(--accent);color:var(--accent);background:var(--acc-dim);}
 .mode-toggle{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
 .mode-btn{background:var(--bg-input);border:none;color:var(--txt-md);font-family:'IBM Plex Mono',monospace;
-  font-size:11px;font-weight:600;padding:6px 12px;cursor:pointer;transition:all .15s;}
+  font-size:16.5px;font-weight:600;padding:6px 12px;cursor:pointer;transition:all .15s;}
 .mode-btn.on{background:var(--accent);color:var(--bg-base);}
 .mode-btn:first-child{border-right:1px solid var(--border);}
-.vlines-lbl{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--txt-md);
+.vlines-lbl{display:flex;align-items:center;gap:6px;font-size:15px;color:var(--txt-md);
   letter-spacing:1px;text-transform:uppercase;cursor:pointer;user-select:none;}
 .vlines-lbl input[type="checkbox"]{width:13px;height:13px;accent-color:var(--accent);cursor:pointer;}
-.vlines-lbl:hover{color:#dde6f0;}
+.vlines-lbl:hover{color:var(--body-txt);}
 .zoom-ctrls{display:flex;gap:4px;margin-left:auto;}
 .zoom-btn{background:var(--bg-input);border:1px solid var(--border-sub);color:var(--txt-md);
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;width:28px;height:28px;
+  font-family:'IBM Plex Mono',monospace;font-size:19.5px;font-weight:600;width:28px;height:28px;
   border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .zoom-btn:hover{background:var(--border);color:var(--txt-hi);}
 .zoom-rst{background:var(--bg-input);border:1px solid var(--border-sub);color:var(--txt-md);
-  font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:0 8px;height:28px;
+  font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:1px;padding:0 8px;height:28px;
   border-radius:4px;cursor:pointer;text-transform:uppercase;transition:all .15s;}
 .zoom-rst:hover{background:var(--border);color:var(--txt-hi);}
-.zoom-hint-txt{font-size:9px;color:var(--txt-lo);letter-spacing:.8px;white-space:nowrap;align-self:center;}
+.zoom-hint-txt{font-size:13.5px;color:var(--txt-lo);letter-spacing:.8px;white-space:nowrap;align-self:center;}
 
 /* Status */
-.status{font-size:11px;padding:10px 14px;border-radius:4px;background:var(--bg-input);
+.status{font-size:16.5px;padding:10px 14px;border-radius:4px;background:var(--bg-input);
   border:1px solid var(--border-sub);margin-bottom:14px;min-height:40px;line-height:1.7;white-space:pre-wrap;}
 .status.idle{color:var(--txt-md);} .status.loading{color:#f0c040;border-color:#4a3a10;}
 .status.ok{color:var(--pos);border-color:#1a4a40;} .status.error{color:var(--neg);border-color:#4a2010;}
 
 /* Legend */
 .legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;min-height:24px;justify-content:center;}
-.leg-item{display:none;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:1px;
+.leg-item{display:none;align-items:center;gap:7px;font-size:16.5px;font-weight:600;letter-spacing:1px;
   cursor:pointer;padding:3px 8px 3px 5px;border-radius:4px;border:1px solid transparent;
   transition:all .15s;user-select:none;position:relative;}
 .leg-item:hover{border-color:var(--border);background:var(--bg-input);}
 .leg-item.vis{display:flex;} .leg-item.muted{opacity:.35;}
 .leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
 .leg-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
-  background:#1e2d40;border:1px solid var(--border);border-radius:4px;padding:4px 8px;
-  font-size:10px;color:var(--txt-hi);white-space:nowrap;letter-spacing:.5px;font-weight:400;
+  background:var(--tooltip-bg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;
+  font-size:15px;color:var(--txt-hi);white-space:nowrap;letter-spacing:.5px;font-weight:400;
   pointer-events:none;opacity:0;transition:opacity .15s;z-index:50;}
 .leg-item:hover .leg-tip{opacity:1;}
 
@@ -138,30 +157,38 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden;}
 .chart-wrap canvas{cursor:crosshair;}
 .chart-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:8px;color:var(--border);font-size:11px;letter-spacing:2px;
+  justify-content:center;gap:8px;color:var(--border);font-size:16.5px;letter-spacing:2px;
   text-transform:uppercase;pointer-events:none;}
-.chart-empty-sub{font-size:9px;color:var(--border-sub);}
-.chart-zoom-hint{position:absolute;bottom:8px;right:10px;font-size:9px;color:var(--txt-lo);letter-spacing:.8px;pointer-events:none;}
+.chart-empty-sub{font-size:13.5px;color:var(--border-sub);}
+.chart-zoom-hint{position:absolute;bottom:8px;right:10px;font-size:13.5px;color:var(--txt-lo);letter-spacing:.8px;pointer-events:none;}
 
 /* Cards */
 .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
 .card{background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;padding:12px 14px;display:none;}
 .card.vis{display:block;}
-.card-tkr{font-size:13px;font-weight:600;letter-spacing:2px;margin-bottom:6px;padding-bottom:8px;border-bottom:1px solid var(--border-sub);}
+.card-tkr{font-size:19.5px;font-weight:600;letter-spacing:2px;margin-bottom:6px;}
+.card-name{font-size:13.5px;color:var(--txt-md);letter-spacing:.3px;line-height:1.4;
+  margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border-sub);}
+.card-tkr.no-name{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border-sub);}
 .card-tkr-link{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.3);transition:border-color .15s;}
 .card-tkr-link:hover{border-bottom-color:rgba(255,255,255,.8);}
-.card-ccy{display:inline-block;font-size:8px;font-weight:400;letter-spacing:2px;color:var(--txt-md);
+.card-ccy{display:inline-block;font-size:12px;font-weight:400;letter-spacing:2px;color:var(--txt-md);
   background:var(--bg-input);border:1px solid var(--border-sub);border-radius:3px;
   padding:1px 5px;margin-left:6px;vertical-align:middle;}
-.card-row{display:flex;justify-content:space-between;font-size:10px;color:var(--txt-md);margin-bottom:4px;}
-.card-val{color:#dde6f0;} .card-val.p{color:var(--pos);} .card-val.n{color:var(--neg);}
-.card-final{font-size:20px;font-weight:600;margin-top:10px;padding-top:8px;border-top:1px solid var(--border-sub);}
-.card-sub{font-size:10px;margin-top:3px;opacity:.8;}
+/* Split direction auto-correction warning */
+.split-warn{background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.35);
+  border-radius:5px;padding:7px 9px;margin-bottom:8px;font-size:13.5px;color:#f0c040;
+  line-height:1.6;cursor:help;}
+.split-warn strong{color:#ffd866;}
+.card-row{display:flex;justify-content:space-between;font-size:15px;color:var(--txt-md);margin-bottom:4px;}
+.card-val{color:var(--body-txt);} .card-val.p{color:var(--pos);} .card-val.n{color:var(--neg);}
+.card-final{font-size:30px;font-weight:600;margin-top:10px;padding-top:8px;border-top:1px solid var(--border-sub);}
+.card-sub{font-size:15px;margin-top:3px;opacity:.8;}
 /* Div/split event tooltip */
 .ev-wrap{position:relative;display:inline-block;cursor:help;border-bottom:1px dotted var(--txt-lo);}
 .ev-wrap .ev-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
-  background:#1e2d40;border:1px solid #2e3f52;border-radius:5px;padding:6px 10px;
-  font-size:9px;color:#dde6f0;white-space:nowrap;letter-spacing:.4px;line-height:1.7;
+  background:var(--tooltip-bg);border:1px solid var(--tooltip-border);border-radius:5px;padding:6px 10px;
+  font-size:13.5px;color:var(--body-txt);white-space:nowrap;letter-spacing:.4px;line-height:1.7;
   pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.6);}
 .ev-wrap:hover .ev-tip{opacity:1;}
 
@@ -172,48 +199,48 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;
   margin-bottom:0;user-select:none;transition:border-color .15s;}
 .collapsible-hdr:hover{border-color:var(--border);}
-.collapsible-hdr .chdr-title{font-size:10px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;flex:1;}
-.collapsible-hdr .chdr-count{font-size:10px;color:var(--txt-lo);letter-spacing:1px;}
-.collapsible-hdr .chdr-arrow{font-size:11px;color:var(--txt-lo);transition:transform .2s;}
+.collapsible-hdr .chdr-title{font-size:15px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;flex:1;}
+.collapsible-hdr .chdr-count{font-size:15px;color:var(--txt-lo);letter-spacing:1px;}
+.collapsible-hdr .chdr-arrow{font-size:16.5px;color:var(--txt-lo);transition:transform .2s;}
 .collapsible-hdr.open .chdr-arrow{transform:rotate(180deg);}
 .collapsible-body{display:none;border:1px solid var(--border-sub);border-top:none;
   border-radius:0 0 6px 6px;overflow:hidden;margin-bottom:20px;}
 .collapsible-body.open{display:block;}
-.ev-table-title{font-size:9px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
-.ev-table{width:100%;border-collapse:collapse;font-size:10px;}
+.ev-table-title{font-size:13.5px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.ev-table{width:100%;border-collapse:collapse;font-size:15px;}
 .ev-table th{color:var(--txt-md);font-weight:500;letter-spacing:1px;text-align:left;
-  padding:5px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;font-size:9px;}
-.ev-table td{padding:5px 10px;border-bottom:1px solid var(--border-sub);color:#dde6f0;}
+  padding:5px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;font-size:13.5px;}
+.ev-table td{padding:5px 10px;border-bottom:1px solid var(--border-sub);color:var(--body-txt);}
 .ev-table tr:last-child td{border-bottom:none;}
 .ev-table tr:hover td{background:var(--bg-input);}
-.ev-badge{display:inline-block;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:3px;font-weight:600;}
+.ev-badge{display:inline-block;font-size:12px;letter-spacing:1px;padding:1px 5px;border-radius:3px;font-weight:600;}
 .ev-badge.div{background:rgba(42,181,165,.15);color:var(--pos);border:1px solid rgba(42,181,165,.3);}
 .ev-badge.split{background:rgba(200,200,255,.1);color:#a8b8ff;border:1px solid rgba(200,200,255,.2);}
 
 /* Calc mode note */
-.calc-note{font-size:9px;color:var(--txt-lo);margin-top:4px;letter-spacing:.3px;}
+.calc-note{font-size:13.5px;color:var(--txt-lo);margin-top:4px;letter-spacing:.3px;}
 
 
 /* Clear button */
 .clear-btn{background:transparent;border:1px solid var(--border-sub);color:var(--txt-lo);
-  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:9px 16px;
+  font-family:'IBM Plex Mono',monospace;font-size:16.5px;letter-spacing:1px;padding:9px 16px;
   border-radius:5px;cursor:pointer;text-transform:uppercase;transition:all .15s;white-space:nowrap;}
 .clear-btn:hover{border-color:var(--neg);color:var(--neg);}
 /* Cookie save indicator */
-.save-flash{position:fixed;bottom:20px;right:20px;background:#1e2d40;border:1px solid var(--accent);
-  border-radius:6px;padding:8px 14px;font-size:10px;color:var(--accent);letter-spacing:1px;
+.save-flash{position:fixed;bottom:20px;right:20px;background:var(--tooltip-bg);border:1px solid var(--accent);
+  border-radius:6px;padding:8px 14px;font-size:15px;color:var(--accent);letter-spacing:1px;
   opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;}
 .save-flash.show{opacity:1;}
 
 /* Reference indices bar */
 .indices-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;
   background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;margin-bottom:14px;}
-.indices-label{font-size:9px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
-.idx-check{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;cursor:pointer;user-select:none;}
+.indices-label{font-size:13.5px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+.idx-check{display:flex;align-items:center;gap:5px;font-size:15px;letter-spacing:.8px;cursor:pointer;user-select:none;}
 .idx-check input[type="checkbox"]{width:13px;height:13px;cursor:pointer;}
 .idx-check:hover span{opacity:1;}
 .idx-check span{opacity:.8;transition:opacity .15s;}
-.note{font-size:9px;color:var(--border);text-align:center;letter-spacing:1.5px;text-transform:uppercase;line-height:1.8;}
+.note{font-size:13.5px;color:var(--border);text-align:center;letter-spacing:1.5px;text-transform:uppercase;line-height:1.8;}
 </style>
 </head>
 <body>
@@ -221,6 +248,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <div class="header">
   <div class="title">Total Return Comparator</div>
   <div class="subtitle">Yahoo Finance · Price + Dividends + Splits · DRIP Reinvested</div>
+  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙 Dark</button>
 </div>
 
 <div class="cors-bar">
@@ -352,13 +380,17 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 const DEFAULT_COLOURS = ['#2ab5a5','#e9c46a','#e76f51','#a8d8ea','#c77dff'];
 const PLACEHOLDERS    = ['AAPL','MSFT','NVDA','RY.TO','AMDY.TO'];
 const DEF_TICKERS     = ['AAPL','MSFT','NVDA','',''];
+// 40 colours across 20 evenly-spaced hues (18° apart on the colour wheel),
+// each hue offered as a vivid tone and a lighter/pastel tone. Adjacent
+// swatches are deliberately far apart in colour space (~80+ RGB distance)
+// so no two nearby options look alike — unlike a palette built from
+// several near-identical shades of the same hue.
 const PALETTE = [
-  '#ff4040','#ff6060','#ff2020','#ff8800','#ffaa33','#ff6600',
-  '#ffd700','#ffe566','#f0c000','#aadd00','#ccee44','#88cc00',
-  '#22cc66','#44dd88','#00aa44','#00ccbb','#33ddcc','#009988',
-  '#00bbff','#33ccff','#0099dd','#3366ff','#5588ff','#2244cc',
-  '#6644ff','#8866ff','#4422cc','#aa44ff','#cc66ff','#8822cc',
-  '#ff44bb','#ff66cc','#dd2299','#ff3388','#ff5599','#dd1166',
+  '#ee2b2b','#e88d7d', '#ee652b','#e8ad7d', '#eea02b','#e8cd7d', '#eeda2b','#e3e87d',
+  '#c7ee2b','#c3e87d', '#8cee2b','#a2e87d', '#52ee2b','#82e87d', '#2bee3e','#7de898',
+  '#2bee79','#7de8b8', '#2beeb3','#7de8d8', '#2beeee','#7dd8e8', '#2bb3ee','#7db8e8',
+  '#2b79ee','#7d98e8', '#2b3eee','#827de8', '#522bee','#a27de8', '#8c2bee','#c37de8',
+  '#c72bee','#e37de8', '#ee2bda','#e87dcd', '#ee2ba0','#e87dad', '#ee2b65','#e87d8d',
 ];
 const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart';
 const YAHOO_HDR  = {'User-Agent':'Mozilla/5.0','Accept':'application/json'};
@@ -374,6 +406,41 @@ let currentView = 'total';
 let currentMode = 'dollar';
 let openPicker  = null;
 let taxRate     = 0.25; // default 25%
+let currentTheme = 'dark'; // 'dark' or 'light'
+let activeIndices = {}; // key -> processed reference-index data (S&P500, Nasdaq, etc.)
+
+// ── Theme (dark/light mode) ────────────────────────────────────────────────────
+const THEME_KEY = 'trc_theme_v1';
+
+// Resolve a CSS variable to its actual computed value — needed because
+// Chart.js draws to <canvas>, and canvas APIs (strokeStyle, fillStyle) do
+// NOT understand "var(--name)" the way DOM/CSS does. We must resolve it
+// to a real colour string (e.g. "#1c2635") before handing it to Chart.js.
+function getCssVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function applyTheme(theme){
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggle');
+  if(btn) btn.textContent = theme==='dark' ? '🌙 Dark' : '☀️ Light';
+  // Re-render chart so canvas-drawn colours (axes, gridlines, crosshair) pick up the new theme
+  if(allData.length || Object.keys(activeIndices||{}).length) renderChartWithIndices();
+}
+
+function toggleTheme(){
+  applyTheme(currentTheme==='dark' ? 'light' : 'dark');
+  try{ localStorage.setItem(THEME_KEY, currentTheme); }catch(e){}
+}
+
+function loadTheme(){
+  try{
+    const saved = localStorage.getItem(THEME_KEY);
+    if(saved==='light' || saved==='dark') applyTheme(saved);
+    else applyTheme('dark');
+  }catch(e){ applyTheme('dark'); }
+}
 
 // ── Persistence (localStorage — acts like cookies for local files) ────────────
 const STORE_KEY = 'trc_settings_v1';
@@ -544,6 +611,7 @@ function buildTickers(){
     el.addEventListener('input',()=>{ const p=el.selectionStart; el.value=el.value.toUpperCase(); el.setSelectionRange(p,p); saveSettings(); });
   }
 }
+loadTheme(); // apply saved theme immediately, before building UI
 buildTickers();
 loadSettings(); // restore saved settings on page load
 
@@ -661,8 +729,14 @@ function processYahoo(result,sym){
   }
   if(pts.length<3) throw new Error('Not enough data points');
 
+  // Build price lookup by date for split-direction cross-validation
+  const closeByDate={};
+  pts.forEach(p=>{ closeByDate[p.date]=p.close; });
+  const sortedDates=pts.map(p=>p.date);
+
   // Build event maps
   const divMap={}, splitMap={}, rawEvents=[];
+  const splitWarnings=[]; // flagged auto-corrections, surfaced on the card
   Object.values(de).forEach(d=>{
     const date=new Date(d.date*1000).toISOString().split('T')[0];
     divMap[date]=(divMap[date]||0)+d.amount;
@@ -670,14 +744,54 @@ function processYahoo(result,sym){
   });
   Object.values(se).forEach(s=>{
     const date=new Date(s.date*1000).toISOString().split('T')[0];
-    // #3: validate split ratio — skip if malformed
-    const ratio=s.numerator/s.denominator;
+    let ratio=s.numerator/s.denominator;
     if(!isFinite(ratio)||ratio<=0||isNaN(ratio)){
       console.warn(`${sym}: skipping malformed split on ${date} (${s.numerator}:${s.denominator})`);
       return;
     }
+
+    // ── Split-direction sanity check ──────────────────────────────────────
+    // Yahoo's numerator/denominator convention can be inconsistent for
+    // reverse splits (rare, e.g. YieldMax ETFs). Cross-check the parsed
+    // ratio against the actual day-over-day price jump around the split
+    // date: a real split's price ratio should move inversely to the share
+    // ratio (price ~ 1/ratio). If they instead move in the SAME direction
+    // (off by a large margin), the parsed ratio is almost certainly
+    // inverted — auto-correct by taking the reciprocal.
+    const idx=sortedDates.indexOf(date);
+    if(idx>0){
+      const priceBefore=closeByDate[sortedDates[idx-1]];
+      const priceOnDay  =closeByDate[date];
+      if(priceBefore>0 && priceOnDay>0){
+        const priceRatio = priceOnDay/priceBefore; // e.g. 5.0 if price jumped 5x (reverse split)
+        // Expected: shareRatio * priceRatio ≈ 1 (split is value-neutral)
+        const expectedProduct = ratio*priceRatio;
+        // Implausible split size (>3x or <0.33x) combined with a product far from 1
+        // strongly suggests numerator/denominator are inverted for this event.
+        const implausible = (ratio>3 || ratio<(1/3));
+        const productOff   = Math.abs(expectedProduct-1) > 0.5; // >50% off neutral
+        if(implausible && productOff){
+          const corrected = 1/ratio;
+          const correctedProduct = corrected*priceRatio;
+          // Only auto-correct if the reciprocal actually fits much better
+          if(Math.abs(correctedProduct-1) < Math.abs(expectedProduct-1)){
+            splitWarnings.push({
+              date, sym,
+              original:`${s.numerator}:${s.denominator}`,
+              originalRatio:ratio,
+              correctedRatio:corrected,
+              priceRatio,
+            });
+            console.warn(`${sym}: split on ${date} appears inverted (Yahoo gave ${s.numerator}:${s.denominator}, price moved ${priceRatio.toFixed(2)}x) — auto-corrected ratio ${ratio.toFixed(3)} → ${corrected.toFixed(3)}`);
+            ratio=corrected;
+          }
+        }
+      }
+    }
+
     splitMap[date]=ratio;
-    rawEvents.push({date,type:'split',ratio:`${s.numerator}:${s.denominator}`,sym});
+    rawEvents.push({date,type:'split',ratio:`${s.numerator}:${s.denominator}`,sym,
+      autoCorrected: splitWarnings.some(w=>w.date===date)});
   });
 
   // #1: after-tax dividend rate
@@ -728,7 +842,7 @@ function processYahoo(result,sym){
   const dripFinal= last.total;
   const divergePct = adjFinal ? ((dripFinal-adjFinal)/adjFinal*100) : null;
 
-  return{sym, series, inv, divCount:dCnt, splitCount:sCnt, rawEvents, eventLog,
+  return{sym, series, inv, divCount:dCnt, splitCount:sCnt, rawEvents, eventLog, splitWarnings,
     totalPct:(last.total-inv)/inv*100, pricePct:(last.price-inv)/inv*100,
     divDollar:last.divContrib, last, adjFinal, divergePct,
     startDate:series[0].date, endDate:last.date,
@@ -779,13 +893,20 @@ function renderCards(){
     const taxRow=`<div class="card-row"><span>Tax rate</span><span class="card-val">${(d.taxRate*100).toFixed(0)}%</span></div>`;
     // #5 / #7: currency badge
     const ccyBadge=`<span class="card-ccy">${d.currency}</span>`;
+    // Split-direction auto-correction warning (e.g. YieldMax reverse splits)
+    const splitWarnHtml = (d.splitWarnings&&d.splitWarnings.length)
+      ? `<div class="split-warn" title="Yahoo's split data for this ticker appeared inverted (common with reverse splits) and was auto-corrected based on the actual price movement on the split date.">
+           ⚠ <strong>${d.splitWarnings.length} split${d.splitWarnings.length>1?'s':''} auto-corrected</strong> — Yahoo's reported ratio looked inverted (likely a reverse split); corrected using observed price movement.
+         </div>`
+      : '';
 
     card.innerHTML=`
-      <div class="card-tkr" style="color:${c}">
+      <div class="card-tkr${fullName?'':' no-name'}" style="color:${c}">
         <a class="card-tkr-link" href="${yahooUrl}" target="_blank" rel="noopener"
            title="${fullName?fullName+' — Yahoo Finance':'Open Yahoo Finance'}" style="color:${c}">${d.sym}</a>${ccyBadge}
       </div>
-      ${fullName?`<div style="font-size:9px;color:var(--txt-md);margin:-4px 0 8px;letter-spacing:.3px;line-height:1.4;">${fullName}</div>`:''}
+      ${fullName?`<div class="card-name">${fullName}</div>`:''}
+      ${splitWarnHtml}
       <div class="card-row"><span>Price return</span><span class="card-val ${pn(d.pricePct)}">${fmtPct(d.pricePct)}</span></div>
       <div class="card-row"><span>Div contribution</span><span class="card-val p">${fmt$(Math.abs(d.divDollar))}</span></div>
       <div class="card-row"><span>Total Return %</span><span class="card-val ${pn(d.totalPct)}">${fmtPct(d.totalPct)}</span></div>
@@ -833,7 +954,7 @@ function renderEventTable(){
         <td>${ev.date}</td>
         <td style="color:${ev.colour};font-weight:600">${ev.sym}</td>
         <td><span class="ev-badge div">DIV</span></td>
-        <td>${fmtD$(ev.divAmount,4)}/sh &nbsp;<span style="color:var(--txt-lo);font-size:9px">(net ${fmtD$(ev.divAmount*(1-taxRate),4)}/sh)</span></td>
+        <td>${fmtD$(ev.divAmount,4)}/sh &nbsp;<span style="color:var(--txt-lo);font-size:13.5px">(net ${fmtD$(ev.divAmount*(1-taxRate),4)}/sh)</span></td>
         <td>${ev.sharesAfter?.toFixed(4)||'—'}</td>
         <td>+${ev.newShares?.toFixed(4)||'—'} shares</td>
         <td>${fmt$(ev.portfolioVal)}</td>`;
@@ -866,7 +987,6 @@ const INDEX_CONFIG = {
   vix:    { sym:'^VIX',   label:'VIX',      colour:'#c0c0c0' },
   btc:    { sym:'BTC-USD',label:'BTC',      colour:'#f7931a' },
 };
-let activeIndices = {}; // key -> processed data (same shape as allData entries)
 
 async function toggleIndex(key, enabled){
   if(!enabled){
@@ -980,6 +1100,7 @@ function renderChartWithIndices(){
   if(chartInst){chartInst.destroy();chartInst=null;}
 
   // Event lines plugin (same as before)
+  const neutralLineColour = getCssVar('--txt-md'); // theme-aware neutral colour for split lines/crosshair
   const evPlugin={
     id:'evLines',
     afterDraw(chart){
@@ -992,11 +1113,11 @@ function renderChartWithIndices(){
         const isDiv=ev.type==='div';
         ctx.save();
         ctx.beginPath(); ctx.setLineDash(isDiv?[5,5]:[2,4]);
-        ctx.strokeStyle=isDiv?ev.colour+'cc':'#c0c8d8aa';
+        ctx.strokeStyle=isDiv?ev.colour+'cc':neutralLineColour+'aa';
         ctx.lineWidth=1.2;
         ctx.moveTo(x,yA.top); ctx.lineTo(x,yA.bottom); ctx.stroke();
         ctx.beginPath(); ctx.setLineDash([]);
-        ctx.fillStyle=isDiv?ev.colour:'#c0c8d8';
+        ctx.fillStyle=isDiv?ev.colour:neutralLineColour;
         ctx.arc(x,yA.top+5,3.5,0,Math.PI*2); ctx.fill();
         ctx.restore();
       });
@@ -1018,7 +1139,7 @@ function renderChartWithIndices(){
       const x=this._x, y=this._y;
       if(x<xA.left||x>xA.right||y<yA.top||y>yA.bottom) return;
       ctx.save(); ctx.setLineDash([4,4]); ctx.lineWidth=1;
-      ctx.strokeStyle='rgba(180,200,220,.55)';
+      ctx.strokeStyle=neutralLineColour+'8c';
       ctx.beginPath(); ctx.moveTo(x,yA.top); ctx.lineTo(x,yA.bottom); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(xA.left,y); ctx.lineTo(xA.right,y); ctx.stroke();
       ctx.restore();
@@ -1034,10 +1155,10 @@ function renderChartWithIndices(){
       plugins:{
         legend:{display:false},
         tooltip:{
-          backgroundColor:'#1e2d40', borderColor:'#2e3f52', borderWidth:1,
-          titleColor:'#8aa0b8', bodyColor:'#dde6f0', padding:12,
-          titleFont:{family:'IBM Plex Mono',size:10},
-          bodyFont:{family:'IBM Plex Mono',size:11},
+          backgroundColor:getCssVar('--tooltip-bg'), borderColor:getCssVar('--tooltip-border'), borderWidth:1,
+          titleColor:getCssVar('--txt-md'), bodyColor:getCssVar('--body-txt'), padding:12,
+          titleFont:{family:'IBM Plex Mono',size:15},
+          bodyFont:{family:'IBM Plex Mono',size:16.5},
           callbacks:{
             title:items=>{ const idx=items[0]?.dataIndex; return labels[idx]||''; },
             afterTitle:items=>{
@@ -1061,12 +1182,13 @@ function renderChartWithIndices(){
         }
       },
       scales:{
-        x:{ticks:{color:'#6a7e94',font:{family:'IBM Plex Mono',size:9},maxRotation:0,autoSkip:true},
-           grid:{color:'var(--grid)'},border:{color:'var(--border)'}},
+        x:{ticks:{color:getCssVar('--txt-md'),font:{family:'IBM Plex Mono',size:13.5},maxRotation:0,autoSkip:true},
+           grid:{color:getCssVar('--grid')},border:{color:getCssVar('--border')}},
         y:{
-          ticks:{color:'#6a7e94',font:{family:'IBM Plex Mono',size:9},
+          position:'right',
+          ticks:{color:getCssVar('--txt-md'),font:{family:'IBM Plex Mono',size:13.5},
             callback:v=>currentView==='raw'?'$'+v.toFixed(0):isPct?(v>=0?'+':'')+v.toFixed(1)+'%':fmt$(v)},
-          grid:{color:'var(--grid)'},border:{color:'var(--border)'},
+          grid:{color:getCssVar('--grid')},border:{color:getCssVar('--border')},
           // Recalculate axis bounds using only visible (non-hidden) datasets
           afterDataLimits(scale){
             const chart=scale.chart;
@@ -1145,6 +1267,8 @@ async function runAnalysis(){
   let statusMsg='✓ Loaded: '+allData.map(d=>d.sym).join(', ');
   const divWarns=allData.filter(d=>d.divergePct!=null&&Math.abs(d.divergePct)>5);
   if(divWarns.length) statusMsg+='\n⚠ Large divergence from adjClose benchmark: '+divWarns.map(d=>`${d.sym} (${d.divergePct>0?'+':''}${d.divergePct.toFixed(1)}%)`).join(', ')+' — check Yahoo data quality';
+  const splitWarns=allData.filter(d=>d.splitWarnings&&d.splitWarnings.length);
+  if(splitWarns.length) statusMsg+='\n⚠ Auto-corrected inverted split data (likely reverse split): '+splitWarns.map(d=>d.sym).join(', ');
   if(errors.length) statusMsg+='\n✗ Failed: '+errors.join(' | ');
   setSt(statusMsg, errors.length?'loading':'ok');
 

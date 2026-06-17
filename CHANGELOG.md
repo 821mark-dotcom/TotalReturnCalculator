@@ -4,6 +4,27 @@ All notable changes to the Total Return Calculator are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Colour picker palette overhauled for better distinctness.** The previous 36-colour palette was built from groups of 3 near-identical shades per hue (e.g. three very similar reds in a row), making adjacent swatches hard to tell apart. Replaced with 40 colours built from 20 hues spaced evenly around the colour wheel (18° apart), each offered in a vivid tone and a lighter/pastel tone. Verified numerically: the worst-case distance between adjacent swatches in the old palette was as low as ~45 (RGB Euclidean distance); every adjacent pair in the new palette is 80+ apart, a near-doubling of perceptual separation. The picker popup was widened and the swatch grid changed from 8 to 10 columns to comfortably fit the larger set.
+
+### Changed
+- Chart fonts (axis ticks and tooltip title/body text) increased by 50% to match the rest of the interface's font scaling.
+- Ticker summary cards: the dividing line beneath the ticker symbol was moved to sit after the full company name instead of directly under the ticker symbol, so it properly separates the card's header (ticker + name) from the data rows below rather than visually cutting between the symbol and its name. Cards with no resolved company name still show the divider directly under the ticker symbol.
+
+### Fixed
+- **Critical: entire page failed to initialize (ticker fields missing, colour swatches blank).** The `activeIndices` state variable was declared with `let` far later in the script than where `loadTheme()` first referenced it during page load. Because `let`/`const` bindings are not accessible before their declaration line runs (the "temporal dead zone"), this threw an uncaught `ReferenceError` immediately on page load, which silently halted all subsequent script execution — including the call to `buildTickers()`. This is why the ticker input fields disappeared entirely and colour picker swatches rendered with no fill. Fixed by moving the `activeIndices` declaration to the top of the script alongside the other state variables, before any initialization code can reference it. Verified by executing the full page in a real DOM environment (jsdom) and confirming ticker fields, colour dots, and swatches all populate correctly.
+- Y-axis moved to the right-hand side of the chart per request, using Chart.js's `position:'right'` option. Crosshair and dividend/split vertical-line plugins required no changes since they read the axis's computed boundaries dynamically.
+
+### Added
+- **Dark/light mode toggle.** A button in the header (🌙 Dark / ☀️ Light) switches the entire UI between a dark theme (default) and a newly designed light theme. All colours — backgrounds, borders, text, tooltips, the CORS notice/error boxes, and the chart itself (axes, gridlines, crosshair, dividend/split lines) — respond to the active theme. Preference is saved to `localStorage` independently of other settings and persists across sessions; it is not affected by the Clear button.
+- **All font sizes increased by 50%** across the entire interface for improved readability, including every label, input, button, card row, tooltip, and table cell.
+
+### Fixed
+- Chart axis gridline/border colours were previously passed to Chart.js as literal `"var(--name)"` strings, which the HTML canvas API cannot interpret (canvas has no concept of CSS custom properties). This silently fell back to a default/incorrect colour. Axis colours are now resolved to actual computed hex values via a `getCssVar()` helper before being handed to Chart.js, and re-resolved on every theme switch.
+
+### Fixed
+- **Split-direction sanity check (reverse split misparse).** Yahoo Finance's split event data can report an inverted ratio for reverse splits — confirmed on real-world tickers like YieldMax ETFs (e.g. AMDY's December 2025 1-for-5 reverse split), where the calculator previously multiplied share count by 5x instead of dividing, producing wildly incorrect total return figures. The calculator now cross-validates every parsed split ratio against the actual day-over-day price movement on the split date. If the parsed ratio and the observed price jump don't move inversely (as a value-neutral split always should), the ratio is automatically corrected by taking its reciprocal. Affected tickers display a visible warning badge on their summary card, and a status bar notice lists every ticker where a correction was applied.
+
 ## [1.0.0] - Initial Release
 
 ### Core functionality
