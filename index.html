@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Total Return Comparator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27>  <rect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230f1318%27/>  <rect x=%275%27 y=%2718%27 width=%275%27 height=%2710%27 rx=%271%27 fill=%27%232ab5a5%27/>  <rect x=%277%27 y=%2714%27 width=%271%27 height=%274%27 fill=%27%232ab5a5%27/>  <rect x=%277%27 y=%2728%27 width=%271%27 height=%272%27 fill=%27%232ab5a5%27/>  <rect x=%2713%27 y=%278%27 width=%275%27 height=%2714%27 rx=%271%27 fill=%27%23e9c46a%27/>  <rect x=%2715%27 y=%274%27 width=%271%27 height=%274%27 fill=%27%23e9c46a%27/>  <rect x=%2715%27 y=%2722%27 width=%271%27 height=%274%27 fill=%27%23e9c46a%27/>  <rect x=%2721%27 y=%2712%27 width=%275%27 height=%2712%27 rx=%271%27 fill=%27%23e76f51%27/>  <rect x=%2723%27 y=%278%27 width=%271%27 height=%274%27 fill=%27%23e76f51%27/>  <rect x=%2723%27 y=%2724%27 width=%271%27 height=%274%27 fill=%27%23e76f51%27/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-base:#0f1318; --bg-panel:#141a24; --bg-input:#1a2030;
+  --border:#2e3f52; --border-sub:#253040;
+  --txt-hi:#f0f4fa; --txt-md:#7a8fa8; --txt-lo:#4a5f74;
+  --accent:#2ab5a5; --acc-dim:rgba(42,181,165,.12);
+  --grid:#1c2635; --pos:#3dbdaa; --neg:#f07060;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg-base);}
+body{font-family:'IBM Plex Mono',monospace;color:#dde6f0;padding:24px;min-height:100vh;}
+
+.header{display:flex;align-items:baseline;gap:16px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;color:var(--txt-hi);}
+.subtitle{font-size:10px;color:var(--txt-md);letter-spacing:1.5px;text-transform:uppercase;}
+
+/* CORS bar */
+.cors-bar{background:#152015;border:1px solid #2e5e2e;border-radius:6px;padding:10px 16px;margin-bottom:10px;
+  font-size:10px;color:#7acc7a;letter-spacing:.8px;line-height:1.7;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.cors-dot{width:8px;height:8px;border-radius:50%;background:#3dbd3d;flex-shrink:0;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cors-txt{flex:1;}
+.test-cors{background:#1a3a1a;border:1px solid #3dbd3d;color:#5dd85d;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;letter-spacing:1px;padding:5px 14px;border-radius:4px;cursor:pointer;text-transform:uppercase;
+  transition:all .15s;white-space:nowrap;}
+.test-cors:hover{background:#3dbd3d;color:#0f1318;}
+
+/* CORS error box */
+.cors-error{display:none;background:#1a0d0d;border:1px solid #6a2020;border-radius:6px;
+  padding:14px 18px;margin-bottom:12px;font-size:11px;color:#e07070;line-height:1.9;}
+.cors-error strong{color:#f09090;}
+.cors-error ol{margin:8px 0 8px 18px;color:#c06060;}
+.cors-error ol li{margin-bottom:2px;}
+.cors-error a{color:#5aacdf;text-decoration:none;border-bottom:1px dotted #5aacdf;}
+.cors-error a:hover{color:#8acff5;}
+.cors-err-title{font-size:12px;font-weight:600;color:#f09090;margin-bottom:6px;letter-spacing:.5px;}
+
+.sec-label{font-size:9px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+
+/* Ticker row */
+.ticker-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.ticker-wrap{position:relative;}
+.ticker-dot{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:12px;height:12px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.25);
+  transition:transform .15s,border-color .15s;z-index:2;}
+.ticker-dot:hover{transform:translateY(-50%) scale(1.3);border-color:rgba(255,255,255,.65);}
+.cpop{position:absolute;left:0;top:calc(100% + 6px);background:#1e2d40;border:1px solid var(--border);
+  border-radius:8px;padding:12px;z-index:200;display:none;box-shadow:0 8px 32px rgba(0,0,0,.7);width:220px;}
+.cpop.open{display:block;}
+.cpop-label{font-size:9px;color:var(--txt-md);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;}
+.swatch{width:20px;height:20px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s;}
+.swatch:hover{transform:scale(1.25);border-color:rgba(255,255,255,.7);}
+.swatch.sel{border-color:#fff;}
+.cpop-custom-label{font-size:9px;color:var(--txt-md);letter-spacing:1px;margin-bottom:4px;}
+.cpop-native{width:100%;height:30px;border:1px solid var(--border);border-radius:4px;background:var(--bg-base);cursor:pointer;padding:2px;}
+.ticker-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--txt-hi);
+  font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;letter-spacing:2px;
+  padding:10px 10px 10px 30px;border-radius:5px;text-transform:uppercase;outline:none;transition:border-color .2s;}
+.ticker-input:focus{border-color:var(--accent);}
+.ticker-input::placeholder{color:var(--txt-lo);font-weight:400;letter-spacing:1px;}
+
+/* Controls */
+.ctrl-row{display:grid;grid-template-columns:175px 175px 160px 220px;gap:10px;align-items:flex-end;margin-bottom:16px;}
+input[type="date"],.inv-input,.sel-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:#dde6f0;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 10px;border-radius:5px;outline:none;
+  transition:border-color .2s;color-scheme:dark;}
+input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--accent);}
+.sel-input{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8fa8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer;}
+.sel-input option{background:#1a2030;}
+
+.run-btn{background:#0f2e2c;border:1px solid var(--accent);color:var(--accent);font-family:'IBM Plex Mono',monospace;
+  font-size:12px;font-weight:600;letter-spacing:1.5px;padding:9px 24px;border-radius:5px;cursor:pointer;
+  text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+.run-btn:hover{background:var(--accent);color:var(--bg-base);}
+.run-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Toggles row */
+.tgl-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.tgl{background:var(--bg-input);border:1px solid var(--border-sub);color:var(--txt-md);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:6px 14px;
+  border-radius:4px;cursor:pointer;text-transform:uppercase;transition:all .15s;}
+.tgl:hover{color:#dde6f0;border-color:var(--border);}
+.tgl.on{border-color:var(--accent);color:var(--accent);background:var(--acc-dim);}
+.mode-toggle{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.mode-btn{background:var(--bg-input);border:none;color:var(--txt-md);font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:600;padding:6px 12px;cursor:pointer;transition:all .15s;}
+.mode-btn.on{background:var(--accent);color:var(--bg-base);}
+.mode-btn:first-child{border-right:1px solid var(--border);}
+.vlines-lbl{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--txt-md);
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;user-select:none;}
+.vlines-lbl input[type="checkbox"]{width:13px;height:13px;accent-color:var(--accent);cursor:pointer;}
+.vlines-lbl:hover{color:#dde6f0;}
+.zoom-ctrls{display:flex;gap:4px;margin-left:auto;}
+.zoom-btn{background:var(--bg-input);border:1px solid var(--border-sub);color:var(--txt-md);
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;width:28px;height:28px;
+  border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.zoom-btn:hover{background:var(--border);color:var(--txt-hi);}
+.zoom-rst{background:var(--bg-input);border:1px solid var(--border-sub);color:var(--txt-md);
+  font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:0 8px;height:28px;
+  border-radius:4px;cursor:pointer;text-transform:uppercase;transition:all .15s;}
+.zoom-rst:hover{background:var(--border);color:var(--txt-hi);}
+.zoom-hint-txt{font-size:9px;color:var(--txt-lo);letter-spacing:.8px;white-space:nowrap;align-self:center;}
+
+/* Status */
+.status{font-size:11px;padding:10px 14px;border-radius:4px;background:var(--bg-input);
+  border:1px solid var(--border-sub);margin-bottom:14px;min-height:40px;line-height:1.7;white-space:pre-wrap;}
+.status.idle{color:var(--txt-md);} .status.loading{color:#f0c040;border-color:#4a3a10;}
+.status.ok{color:var(--pos);border-color:#1a4a40;} .status.error{color:var(--neg);border-color:#4a2010;}
+
+/* Legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;min-height:24px;justify-content:center;}
+.leg-item{display:none;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:1px;
+  cursor:pointer;padding:3px 8px 3px 5px;border-radius:4px;border:1px solid transparent;
+  transition:all .15s;user-select:none;position:relative;}
+.leg-item:hover{border-color:var(--border);background:var(--bg-input);}
+.leg-item.vis{display:flex;} .leg-item.muted{opacity:.35;}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.leg-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#1e2d40;border:1px solid var(--border);border-radius:4px;padding:4px 8px;
+  font-size:10px;color:var(--txt-hi);white-space:nowrap;letter-spacing:.5px;font-weight:400;
+  pointer-events:none;opacity:0;transition:opacity .15s;z-index:50;}
+.leg-item:hover .leg-tip{opacity:1;}
+
+/* Chart */
+.chart-wrap{position:relative;width:100%;height:400px;background:var(--bg-panel);
+  border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden;}
+.chart-wrap canvas{cursor:crosshair;}
+.chart-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:8px;color:var(--border);font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;pointer-events:none;}
+.chart-empty-sub{font-size:9px;color:var(--border-sub);}
+.chart-zoom-hint{position:absolute;bottom:8px;right:10px;font-size:9px;color:var(--txt-lo);letter-spacing:.8px;pointer-events:none;}
+
+/* Cards */
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;padding:12px 14px;display:none;}
+.card.vis{display:block;}
+.card-tkr{font-size:13px;font-weight:600;letter-spacing:2px;margin-bottom:6px;padding-bottom:8px;border-bottom:1px solid var(--border-sub);}
+.card-tkr-link{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.3);transition:border-color .15s;}
+.card-tkr-link:hover{border-bottom-color:rgba(255,255,255,.8);}
+.card-ccy{display:inline-block;font-size:8px;font-weight:400;letter-spacing:2px;color:var(--txt-md);
+  background:var(--bg-input);border:1px solid var(--border-sub);border-radius:3px;
+  padding:1px 5px;margin-left:6px;vertical-align:middle;}
+.card-row{display:flex;justify-content:space-between;font-size:10px;color:var(--txt-md);margin-bottom:4px;}
+.card-val{color:#dde6f0;} .card-val.p{color:var(--pos);} .card-val.n{color:var(--neg);}
+.card-final{font-size:20px;font-weight:600;margin-top:10px;padding-top:8px;border-top:1px solid var(--border-sub);}
+.card-sub{font-size:10px;margin-top:3px;opacity:.8;}
+/* Div/split event tooltip */
+.ev-wrap{position:relative;display:inline-block;cursor:help;border-bottom:1px dotted var(--txt-lo);}
+.ev-wrap .ev-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#1e2d40;border:1px solid #2e3f52;border-radius:5px;padding:6px 10px;
+  font-size:9px;color:#dde6f0;white-space:nowrap;letter-spacing:.4px;line-height:1.7;
+  pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.6);}
+.ev-wrap:hover .ev-tip{opacity:1;}
+
+/* Event table below cards */
+.ev-table-section{margin-bottom:20px;}
+/* Collapsible event log */
+.collapsible-hdr{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;
+  background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;
+  margin-bottom:0;user-select:none;transition:border-color .15s;}
+.collapsible-hdr:hover{border-color:var(--border);}
+.collapsible-hdr .chdr-title{font-size:10px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;flex:1;}
+.collapsible-hdr .chdr-count{font-size:10px;color:var(--txt-lo);letter-spacing:1px;}
+.collapsible-hdr .chdr-arrow{font-size:11px;color:var(--txt-lo);transition:transform .2s;}
+.collapsible-hdr.open .chdr-arrow{transform:rotate(180deg);}
+.collapsible-body{display:none;border:1px solid var(--border-sub);border-top:none;
+  border-radius:0 0 6px 6px;overflow:hidden;margin-bottom:20px;}
+.collapsible-body.open{display:block;}
+.ev-table-title{font-size:9px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.ev-table{width:100%;border-collapse:collapse;font-size:10px;}
+.ev-table th{color:var(--txt-md);font-weight:500;letter-spacing:1px;text-align:left;
+  padding:5px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;font-size:9px;}
+.ev-table td{padding:5px 10px;border-bottom:1px solid var(--border-sub);color:#dde6f0;}
+.ev-table tr:last-child td{border-bottom:none;}
+.ev-table tr:hover td{background:var(--bg-input);}
+.ev-badge{display:inline-block;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:3px;font-weight:600;}
+.ev-badge.div{background:rgba(42,181,165,.15);color:var(--pos);border:1px solid rgba(42,181,165,.3);}
+.ev-badge.split{background:rgba(200,200,255,.1);color:#a8b8ff;border:1px solid rgba(200,200,255,.2);}
+
+/* Calc mode note */
+.calc-note{font-size:9px;color:var(--txt-lo);margin-top:4px;letter-spacing:.3px;}
+
+
+/* Clear button */
+.clear-btn{background:transparent;border:1px solid var(--border-sub);color:var(--txt-lo);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:9px 16px;
+  border-radius:5px;cursor:pointer;text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+.clear-btn:hover{border-color:var(--neg);color:var(--neg);}
+/* Cookie save indicator */
+.save-flash{position:fixed;bottom:20px;right:20px;background:#1e2d40;border:1px solid var(--accent);
+  border-radius:6px;padding:8px 14px;font-size:10px;color:var(--accent);letter-spacing:1px;
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;}
+.save-flash.show{opacity:1;}
+
+/* Reference indices bar */
+.indices-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;
+  background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;margin-bottom:14px;}
+.indices-label{font-size:9px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+.idx-check{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;cursor:pointer;user-select:none;}
+.idx-check input[type="checkbox"]{width:13px;height:13px;cursor:pointer;}
+.idx-check:hover span{opacity:1;}
+.idx-check span{opacity:.8;transition:opacity .15s;}
+.note{font-size:9px;color:var(--border);text-align:center;letter-spacing:1.5px;text-transform:uppercase;line-height:1.8;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">Total Return Comparator</div>
+  <div class="subtitle">Yahoo Finance · Price + Dividends + Splits · DRIP Reinvested</div>
+</div>
+
+<div class="cors-bar">
+  <div class="cors-dot"></div>
+  <div class="cors-txt">CORS extension required — <strong>"Allow CORS"</strong> must be <strong>enabled</strong> in Chrome &nbsp;·&nbsp; TSX: <strong>RY.TO</strong> &nbsp;·&nbsp; US: <strong>AAPL</strong></div>
+  <button class="test-cors" onclick="testConnection()">⚡ Test CORS</button>
+</div>
+
+<div class="cors-error" id="cors-error-box">
+  <div class="cors-err-title">⚠ CORS Blocked — Yahoo Finance cannot be reached from this file</div>
+  You need a browser extension to allow cross-origin requests. Follow these steps:
+  <ol>
+    <li>Install the free extension: <a href="https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf" target="_blank" rel="noopener">Allow CORS: Access-Control-Allow-Origin →</a></li>
+    <li>After installing, click the extension icon in the Chrome toolbar (puzzle piece → pin it)</li>
+    <li>Click the extension icon — it should turn <strong>orange/active</strong></li>
+    <li>Come back here and click <strong>⚡ Test CORS</strong> again</li>
+  </ol>
+  <em>Toggle the extension off when not using this dashboard for best security.</em>
+</div>
+
+<div class="sec-label" style="margin-bottom:10px;">Tickers (up to 5) — click the dot to change colour</div>
+<div class="ticker-row" id="tickerRow"></div>
+
+<div class="ctrl-row">
+  <div><div class="sec-label">Start date</div><input type="date" id="startDate" onchange="saveSettings()"></div>
+  <div><div class="sec-label">End date</div><input type="date" id="endDate" onchange="saveSettings()"></div>
+  <div><div class="sec-label">Investment ($)</div><input class="inv-input" type="text" id="initInv" value="10,000" inputmode="numeric"></div>
+  <!-- #1 Tax rate selector -->
+  <div>
+    <div class="sec-label">Tax on dividends</div>
+    <select class="sel-input" id="taxRate" onchange="onTaxChange()">
+      <option value="0">0% — Tax-free (TFSA/RRSP)</option>
+      <option value="0.15">15% — Preferential rate</option>
+      <option value="0.25" selected>25% — Mid bracket</option>
+      <option value="0.40">40% — High bracket</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <div class="calc-note" id="taxNote">Dividends taxed before reinvestment</div>
+  </div>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:16px;">
+  <button class="run-btn" id="runBtn" onclick="runAnalysis()">▶ Run Analysis</button>
+  <button class="clear-btn" onclick="clearAll()" title="Clear all data and reset fields">✕ Clear</button>
+</div>
+
+<div class="sec-label" style="margin-bottom:8px;">Reference Indices</div>
+<div class="indices-bar" id="indicesBar">
+  <span class="indices-label">Overlay:</span>
+  <label class="idx-check" style="color:#f0c040"><input type="checkbox" id="idx-sp500"  onchange="toggleIndex('sp500' ,this.checked)"> <span>S&amp;P 500</span></label>
+  <label class="idx-check" style="color:#60b0ff"><input type="checkbox" id="idx-nasdaq" onchange="toggleIndex('nasdaq',this.checked)"> <span>Nasdaq</span></label>
+  <label class="idx-check" style="color:#ff8040"><input type="checkbox" id="idx-tsx"    onchange="toggleIndex('tsx'   ,this.checked)"> <span>TSX</span></label>
+  <label class="idx-check" style="color:#c0c0c0"><input type="checkbox" id="idx-vix"    onchange="toggleIndex('vix'   ,this.checked)"> <span>VIX</span></label>
+  <label class="idx-check" style="color:#f7931a"><input type="checkbox" id="idx-btc"    onchange="toggleIndex('btc'   ,this.checked)"> <span>BTC</span></label>
+</div>
+<div class="sec-label">Chart view</div>
+<div class="tgl-row">
+  <button class="tgl" id="tog-raw"        onclick="setView('raw')">Price (Raw $)</button>
+  <button class="tgl" id="tog-price"      onclick="setView('price')">Price Return</button>
+  <button class="tgl" id="tog-divcontrib" onclick="setView('divcontrib')">Div + Split Contribution</button>
+  <button class="tgl on" id="tog-total"   onclick="setView('total')">Total Return</button>
+  <div class="mode-toggle" title="Switch between dollar value and % return">
+    <button class="mode-btn on" id="mode-dollar" onclick="setMode('dollar')">$</button>
+    <button class="mode-btn"    id="mode-pct"    onclick="setMode('pct')">%</button>
+  </div>
+  <label class="vlines-lbl">
+    <input type="checkbox" id="showVlines" checked onchange="renderChartWithIndices();saveSettings()">
+    Div/Split Lines
+  </label>
+  <div class="zoom-ctrls">
+    <button class="zoom-btn" onclick="doZoom('in')"  title="Zoom in (Ctrl+Scroll)">+</button>
+    <button class="zoom-btn" onclick="doZoom('out')" title="Zoom out (Ctrl+Scroll)">−</button>
+    <button class="zoom-rst" onclick="doZoomReset()">Reset</button>
+  </div>
+  <span class="zoom-hint-txt">Ctrl+Scroll to zoom · Drag to pan</span>
+</div>
+
+<div class="status idle" id="status">Click ⚡ Test CORS first, then Run Analysis.</div>
+
+<div class="legend" id="legend">
+  <div class="leg-item" id="leg0" onclick="toggleSeries(0)"><div class="leg-dot" id="leg0-dot"></div><span id="leg0-lbl"></span><div class="leg-tip" id="leg0-tip"></div></div>
+  <div class="leg-item" id="leg1" onclick="toggleSeries(1)"><div class="leg-dot" id="leg1-dot"></div><span id="leg1-lbl"></span><div class="leg-tip" id="leg1-tip"></div></div>
+  <div class="leg-item" id="leg2" onclick="toggleSeries(2)"><div class="leg-dot" id="leg2-dot"></div><span id="leg2-lbl"></span><div class="leg-tip" id="leg2-tip"></div></div>
+  <div class="leg-item" id="leg3" onclick="toggleSeries(3)"><div class="leg-dot" id="leg3-dot"></div><span id="leg3-lbl"></span><div class="leg-tip" id="leg3-tip"></div></div>
+  <div class="leg-item" id="leg4" onclick="toggleSeries(4)"><div class="leg-dot" id="leg4-dot"></div><span id="leg4-lbl"></span><div class="leg-tip" id="leg4-tip"></div></div>
+</div>
+
+<div class="chart-wrap">
+  <canvas id="mainChart"></canvas>
+  <div class="chart-empty" id="chartEmpty">
+    <span>No data yet</span>
+    <span class="chart-empty-sub">Enter tickers and click Run Analysis</span>
+  </div>
+  <div class="chart-zoom-hint">Ctrl+Scroll to zoom · Drag to pan</div>
+</div>
+
+<div class="cards" id="cardsRow">
+  <div class="card" id="card0"></div>
+  <div class="card" id="card1"></div>
+  <div class="card" id="card2"></div>
+  <div class="card" id="card3"></div>
+  <div class="card" id="card4"></div>
+</div>
+
+<!-- #4 Event log — collapsible -->
+<div id="evTableSection" style="display:none;margin-bottom:20px;">
+  <div class="collapsible-hdr" id="evLogHdr" onclick="toggleEvLog()">
+    <span class="chdr-title">📋 Dividend &amp; Split Event Log</span>
+    <span class="chdr-count" id="evLogCount"></span>
+    <span class="chdr-arrow">▼</span>
+  </div>
+  <div class="collapsible-body" id="evLogBody">
+    <table class="ev-table" id="evTable">
+      <thead><tr>
+        <th>Date</th><th>Ticker</th><th>Type</th><th>Amount / Ratio</th>
+        <th>Shares at event</th><th>New shares bought</th><th>Portfolio value</th>
+      </tr></thead>
+      <tbody id="evTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="note">
+  Yahoo Finance v8 · DRIP simulated at ex-date · After-tax dividend reinvestment · Splits validated<br>
+  TSX tickers: RY.TO format · Prices in native currency — mix USD/CAD with care
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const DEFAULT_COLOURS = ['#2ab5a5','#e9c46a','#e76f51','#a8d8ea','#c77dff'];
+const PLACEHOLDERS    = ['AAPL','MSFT','NVDA','RY.TO','AMDY.TO'];
+const DEF_TICKERS     = ['AAPL','MSFT','NVDA','',''];
+const PALETTE = [
+  '#ff4040','#ff6060','#ff2020','#ff8800','#ffaa33','#ff6600',
+  '#ffd700','#ffe566','#f0c000','#aadd00','#ccee44','#88cc00',
+  '#22cc66','#44dd88','#00aa44','#00ccbb','#33ddcc','#009988',
+  '#00bbff','#33ccff','#0099dd','#3366ff','#5588ff','#2244cc',
+  '#6644ff','#8866ff','#4422cc','#aa44ff','#cc66ff','#8822cc',
+  '#ff44bb','#ff66cc','#dd2299','#ff3388','#ff5599','#dd1166',
+];
+const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart';
+const YAHOO_HDR  = {'User-Agent':'Mozilla/5.0','Accept':'application/json'};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let colours     = [...DEFAULT_COLOURS];
+let visible     = [true,true,true,true,true];
+let chartInst   = null;
+let allData     = [];
+let allEvents   = [];
+let stockNames  = {};
+let currentView = 'total';
+let currentMode = 'dollar';
+let openPicker  = null;
+let taxRate     = 0.25; // default 25%
+
+// ── Persistence (localStorage — acts like cookies for local files) ────────────
+const STORE_KEY = 'trc_settings_v1';
+
+function saveSettings(){
+  try{
+    const cfg={
+      tickers:   [0,1,2,3,4].map(i=>document.getElementById('t'+i)?.value||''),
+      startDate: document.getElementById('startDate')?.value||'',
+      endDate:   document.getElementById('endDate')?.value||'',
+      initInv:   document.getElementById('initInv')?.value||'10,000',
+      taxRate:   document.getElementById('taxRate')?.value||'0.25',
+      colours:   [...colours],
+      view:      currentView,
+      mode:      currentMode,
+      showVlines:document.getElementById('showVlines')?.checked??true,
+      activeIdxKeys:Object.keys(activeIndices),
+    };
+    localStorage.setItem(STORE_KEY, JSON.stringify(cfg));
+    // Flash the save indicator
+    const fl=document.getElementById('saveFlash');
+    if(fl){ fl.classList.add('show'); setTimeout(()=>fl.classList.remove('show'),1800); }
+  }catch(e){ console.warn('Could not save settings:', e); }
+}
+
+function loadSettings(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    const cfg=JSON.parse(raw);
+    // Tickers
+    if(Array.isArray(cfg.tickers)) cfg.tickers.forEach((v,i)=>{ const el=document.getElementById('t'+i); if(el) el.value=v; });
+    // Dates
+    if(cfg.startDate) document.getElementById('startDate').value=cfg.startDate;
+    if(cfg.endDate)   document.getElementById('endDate').value=cfg.endDate;
+    // Investment
+    if(cfg.initInv)   document.getElementById('initInv').value=cfg.initInv;
+    // Tax rate
+    if(cfg.taxRate){
+      const sel=document.getElementById('taxRate');
+      // Try to match a preset option; fall back to 0.25
+      const opts=[...sel.options].map(o=>o.value);
+      sel.value = opts.includes(cfg.taxRate) ? cfg.taxRate : '0.25';
+      onTaxChange();
+    }
+    // Colours
+    if(Array.isArray(cfg.colours) && cfg.colours.length===5){
+      cfg.colours.forEach((c,i)=>{ colours[i]=c; });
+      // Rebuild ticker dots with restored colours (after buildTickers runs)
+      setTimeout(()=>{
+        colours.forEach((c,i)=>{
+          const dot=document.getElementById('dot'+i); if(dot) dot.style.background=c;
+          const nat=document.getElementById('nat'+i); if(nat) nat.value=c;
+          const sc=document.getElementById('sw'+i);
+          if(sc) sc.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.title===c));
+        });
+      },50);
+    }
+    // View/mode
+    if(cfg.view)  setView(cfg.view);
+    if(cfg.mode)  setMode(cfg.mode);
+    // Vlines
+    if(cfg.showVlines!=null) document.getElementById('showVlines').checked=cfg.showVlines;
+    // Restore index checkboxes (don't re-fetch, just restore checkbox state)
+    if(Array.isArray(cfg.activeIdxKeys)) cfg.activeIdxKeys.forEach(k=>{
+      const el=document.getElementById('idx-'+k); if(el) el.checked=true;
+    });
+  }catch(e){ console.warn('Could not load settings:', e); }
+}
+
+function clearAll(){
+  // Clear chart data
+  allData=[]; allEvents=[]; stockNames={}; visible=[true,true,true,true,true];
+  if(chartInst){ chartInst.destroy(); chartInst=null; }
+  document.getElementById('chartEmpty').style.display='flex';
+  for(let i=0;i<5;i++){ document.getElementById('card'+i).className='card'; document.getElementById('leg'+i).classList.remove('vis'); }
+  document.getElementById('evTableSection').style.display='none';
+  setSt('Fields cleared. Enter tickers and click Run Analysis.','idle');
+  // Reset form fields to defaults
+  const now=new Date(), end=now.toISOString().split('T')[0];
+  const s=new Date(now); s.setFullYear(s.getFullYear()-1);
+  document.getElementById('startDate').value=s.toISOString().split('T')[0];
+  document.getElementById('endDate').value=end;
+  document.getElementById('initInv').value='10,000';
+  document.getElementById('taxRate').value='0.25'; taxRate=0.25;
+  document.getElementById('taxNote').textContent='Dividends taxed before reinvestment';
+  [0,1,2,3,4].forEach(i=>{ const el=document.getElementById('t'+i); if(el) el.value=i<3?['AAPL','MSFT','NVDA'][i]:''; });
+  // Reset colours to defaults
+  colours=[...DEFAULT_COLOURS];
+  colours.forEach((c,i)=>{
+    const dot=document.getElementById('dot'+i); if(dot) dot.style.background=c;
+    const nat=document.getElementById('nat'+i); if(nat) nat.value=c;
+    const sc=document.getElementById('sw'+i);
+    if(sc) sc.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.title===c));
+    const ld=document.getElementById('leg'+i+'-dot'); if(ld) ld.style.background=c;
+  });
+  // Reset index checkboxes and data
+  activeIndices={};
+  Object.keys(INDEX_CONFIG).forEach(k=>{ const el=document.getElementById('idx-'+k); if(el) el.checked=false; });
+  // Clear saved settings
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+}
+
+// ── Dates ─────────────────────────────────────────────────────────────────────
+(()=>{
+  const now=new Date(), end=now.toISOString().split('T')[0];
+  const s=new Date(now); s.setFullYear(s.getFullYear()-1);
+  document.getElementById('endDate').value  =end;
+  document.getElementById('startDate').value=s.toISOString().split('T')[0];
+})();
+
+// ── Tax rate ──────────────────────────────────────────────────────────────────
+function onTaxChange(){
+  const sel=document.getElementById('taxRate');
+  if(sel.value==='custom'){
+    const v=parseFloat(prompt('Enter custom tax rate (0–100):')||'');
+    if(!isNaN(v)&&v>=0&&v<=100){
+      taxRate=v/100;
+      document.getElementById('taxNote').textContent=`${v}% tax on dividends before reinvestment`;
+    } else { sel.value='0.25'; taxRate=0.25; }
+  } else {
+    taxRate=parseFloat(sel.value);
+    const labels={'0':'Tax-free (TFSA/RRSP)','0.15':'15% preferential','0.25':'25% mid bracket','0.40':'40% high bracket'};
+    document.getElementById('taxNote').textContent=labels[sel.value]||`${(taxRate*100).toFixed(0)}% tax on dividends`;
+  }
+  saveSettings();
+}
+
+// ── Investment formatting ─────────────────────────────────────────────────────
+const invEl=document.getElementById('initInv');
+invEl.addEventListener('input',()=>{
+  const raw=invEl.value.replace(/[^0-9]/g,''), n=parseInt(raw,10);
+  if(!isNaN(n)) invEl.value=n.toLocaleString('en-US');
+  else if(raw==='') invEl.value='';
+});
+invEl.addEventListener('blur',()=>{ const n=getInv(); if(n>0) invEl.value=n.toLocaleString('en-US'); saveSettings(); });
+function getInv(){ return parseInt(invEl.value.replace(/[^0-9]/g,''),10)||10000; }
+
+// ── Build ticker inputs ───────────────────────────────────────────────────────
+function buildTickers(){
+  const row=document.getElementById('tickerRow'); row.innerHTML='';
+  for(let i=0;i<5;i++){
+    const c=colours[i], wrap=document.createElement('div');
+    wrap.className='ticker-wrap'; wrap.id='wrap'+i;
+    wrap.innerHTML=`
+      <div class="ticker-dot" id="dot${i}" style="background:${c}" onclick="togglePicker(${i},event)" title="Change colour"></div>
+      <div class="cpop" id="cpop${i}">
+        <div class="cpop-label">Choose colour</div>
+        <div class="swatches" id="sw${i}"></div>
+        <div class="cpop-custom-label">Custom</div>
+        <input type="color" class="cpop-native" id="nat${i}" value="${c}" oninput="applyColour(${i},this.value)">
+      </div>
+      <input class="ticker-input" id="t${i}" placeholder="${PLACEHOLDERS[i]}" maxlength="10" value="${DEF_TICKERS[i]}">`;
+    row.appendChild(wrap);
+    setTimeout(()=>{
+      const sc=document.getElementById('sw'+i);
+      PALETTE.forEach(pc=>{
+        const s=document.createElement('div');
+        s.className='swatch'+(pc===c?' sel':'');
+        s.style.background=pc; s.title=pc;
+        s.onclick=()=>applyColour(i,pc);
+        sc.appendChild(s);
+      });
+    },0);
+  }
+  for(let i=0;i<5;i++){
+    const el=document.getElementById('t'+i);
+    el.addEventListener('input',()=>{ const p=el.selectionStart; el.value=el.value.toUpperCase(); el.setSelectionRange(p,p); saveSettings(); });
+  }
+}
+buildTickers();
+loadSettings(); // restore saved settings on page load
+
+document.addEventListener('click',e=>{
+  if(openPicker===null) return;
+  const pp=document.getElementById('cpop'+openPicker), dd=document.getElementById('dot'+openPicker);
+  if(pp&&!pp.contains(e.target)&&e.target!==dd){ pp.classList.remove('open'); openPicker=null; }
+});
+function togglePicker(i,e){
+  e.stopPropagation();
+  if(openPicker!==null&&openPicker!==i) document.getElementById('cpop'+openPicker)?.classList.remove('open');
+  const pp=document.getElementById('cpop'+i), was=pp.classList.contains('open');
+  pp.classList.toggle('open',!was); openPicker=was?null:i;
+}
+function applyColour(i,c){
+  colours[i]=c;
+  const dot=document.getElementById('dot'+i); if(dot) dot.style.background=c;
+  const nat=document.getElementById('nat'+i); if(nat) nat.value=c;
+  const sc=document.getElementById('sw'+i);
+  if(sc) sc.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.title===c));
+  const ld=document.getElementById('leg'+i+'-dot'); if(ld) ld.style.background=c;
+  if(allData.length){ renderChartWithIndices(); renderCards(); renderEventTable(); }
+  saveSettings();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function setSt(msg,type='idle'){ const el=document.getElementById('status'); el.textContent=msg; el.className='status '+type; }
+function setView(v){
+  currentView=v;
+  document.querySelectorAll('.tgl').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tog-'+v).classList.add('on');
+  if(allData.length) renderChartWithIndices();
+  saveSettings();
+}
+function setMode(m){
+  currentMode=m;
+  document.getElementById('mode-dollar').classList.toggle('on',m==='dollar');
+  document.getElementById('mode-pct').classList.toggle('on',m==='pct');
+  if(allData.length) renderChartWithIndices();
+  saveSettings();
+}
+function toggleSeries(i){
+  if(!allData[i]) return;
+  visible[i]=!visible[i];
+  document.getElementById('leg'+i).classList.toggle('muted',!visible[i]);
+  if(chartInst){ chartInst.getDatasetMeta(i).hidden=!visible[i]; chartInst.update(); }
+  renderCards();       // sync card show/hide
+  renderEventTable();  // sync event log
+}
+function toUnix(s){ return Math.floor(new Date(s+'T12:00:00Z').getTime()/1000); }
+function fmt$(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
+function fmtD$(n,d=4){ return '$'+n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtPct(n){ return (n>=0?'+':'')+n.toFixed(1)+'%'; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function calcCAGR(s,e,d1,d2){
+  const y=(new Date(d2)-new Date(d1))/(365.25*86400*1000);
+  if(y<.08) return null;
+  return (Math.pow(e/s,1/y)-1)*100;
+}
+// #7: detect TSX suffix
+function isTSX(sym){ return sym.endsWith('.TO')||sym.endsWith('.TSX'); }
+function ccyLabel(sym){ return isTSX(sym)?'CAD':'USD'; }
+
+function doZoom(dir){ if(chartInst) chartInst.zoom(dir==='in'?1.3:.77); }
+function doZoomReset(){ if(chartInst) chartInst.resetZoom(); }
+
+// ── Yahoo fetch ───────────────────────────────────────────────────────────────
+async function fetchYahoo(sym,p1,p2){
+  const url=`${YAHOO_BASE}/${encodeURIComponent(sym)}?period1=${p1}&period2=${p2}&interval=1d&includeAdjustedClose=true&events=div%2Csplits`;
+  let resp;
+  try{ resp=await fetch(url,{headers:YAHOO_HDR}); }
+  catch(e){ throw new Error(`Network error — CORS extension ON?\n(${e.message})`); }
+  if(resp.status===404) throw new Error('Symbol not found. TSX format: RY.TO');
+  if(resp.status===429) throw new Error('Yahoo rate limit — wait 30s.');
+  if(!resp.ok) throw new Error(`Yahoo HTTP ${resp.status}`);
+  const json=await resp.json();
+  if(json?.chart?.error) throw new Error(json.chart.error.description||'Yahoo error');
+  const r=json?.chart?.result?.[0];
+  if(!r||!r.timestamp||r.timestamp.length<3) throw new Error('No data returned');
+  return r;
+}
+
+async function testConnection(){
+  setSt('Testing Yahoo Finance + CORS...','loading');
+  try{
+    const p2=Math.floor(Date.now()/1000), p1=p2-7*86400;
+    const r=await fetchYahoo('AAPL',p1,p2);
+    const last=r.indicators?.quote?.[0]?.close?.filter(c=>c!=null).pop();
+    const date=new Date(r.timestamp[r.timestamp.length-1]*1000).toISOString().split('T')[0];
+    setSt(`✓ CORS working! AAPL last close: $${last?.toFixed(2)} (${date}) — ready.`,'ok');
+    document.getElementById('cors-error-box').style.display='none';
+  }catch(e){
+    setSt(`✗ CORS blocked — see instructions below.`,'error');
+    document.getElementById('cors-error-box').style.display='block';
+  }
+}
+
+// ── Process data (improvements #1–#3, #6) ────────────────────────────────────
+function processYahoo(result,sym){
+  const inv=getInv();
+  const ts=result.timestamp||[], cl=result.indicators?.quote?.[0]?.close||[];
+  // #2: adjClose fetched and now used as cross-check reference
+  const ac=result.indicators?.adjclose?.[0]?.adjclose||[];
+  const de=result.events?.dividends||{}, se=result.events?.splits||{};
+
+  // Build daily points — keep adjClose for cross-check
+  const pts=[];
+  for(let i=0;i<ts.length;i++){
+    if(cl[i]==null||cl[i]<=0) continue;
+    pts.push({
+      date: new Date(ts[i]*1000).toISOString().split('T')[0],
+      close: cl[i],
+      adjClose: (ac[i]!=null&&ac[i]>0) ? ac[i] : null,
+    });
+  }
+  if(pts.length<3) throw new Error('Not enough data points');
+
+  // Build event maps
+  const divMap={}, splitMap={}, rawEvents=[];
+  Object.values(de).forEach(d=>{
+    const date=new Date(d.date*1000).toISOString().split('T')[0];
+    divMap[date]=(divMap[date]||0)+d.amount;
+    rawEvents.push({date,type:'div',amount:d.amount,sym});
+  });
+  Object.values(se).forEach(s=>{
+    const date=new Date(s.date*1000).toISOString().split('T')[0];
+    // #3: validate split ratio — skip if malformed
+    const ratio=s.numerator/s.denominator;
+    if(!isFinite(ratio)||ratio<=0||isNaN(ratio)){
+      console.warn(`${sym}: skipping malformed split on ${date} (${s.numerator}:${s.denominator})`);
+      return;
+    }
+    splitMap[date]=ratio;
+    rawEvents.push({date,type:'split',ratio:`${s.numerator}:${s.denominator}`,sym});
+  });
+
+  // #1: after-tax dividend rate
+  const keepRate = 1 - taxRate;
+
+  // DRIP simulation — two parallel share counters
+  const base=pts[0].close;
+  let sT=inv/base, sP=inv/base;
+  let dCnt=0, sCnt=0;
+  // #4: detailed event log for the table
+  const eventLog=[];
+
+  // #6: fill union of dates — carry forward last close for missing dates
+  // We use the pts as-is (Yahoo already gives every trading day);
+  // for multi-ticker alignment we use union+forward-fill in renderChart
+
+  const series=pts.map(p=>{
+    // Splits first
+    if(splitMap[p.date]){
+      sT*=splitMap[p.date]; sP*=splitMap[p.date]; sCnt++;
+      eventLog.push({date:p.date,type:'split',sym,ratio:splitMap[p.date],
+        sharesBeforeEvent:sT/splitMap[p.date], newShares:sT*(1-1/splitMap[p.date]),
+        portfolioVal:sT*p.close, divAmount:null});
+    }
+    // Dividends — #1 tax applied, #2 reinvest at ex-date close (correct timing)
+    if(divMap[p.date]&&p.close>0){
+      const grossCash = sT*divMap[p.date];
+      const netCash   = grossCash*keepRate;  // after-tax
+      const newShares = netCash/p.close;
+      sT+=newShares; dCnt++;
+      eventLog.push({date:p.date,type:'div',sym,divAmount:divMap[p.date],
+        grossCash, netCash, newShares, sharesAfter:sT, portfolioVal:sT*p.close});
+    }
+    return{
+      date:p.date, raw:p.close,
+      price:sP*p.close,
+      total:sT*p.close,
+      divContrib:sT*p.close - sP*p.close,
+      // #2: adjClose-ratio benchmark for cross-check
+      adjBench: pts[0].adjClose&&p.adjClose ? (p.adjClose/pts[0].adjClose)*inv : null,
+    };
+  });
+
+  const last=series[series.length-1];
+
+  // #2: adjClose cross-check divergence
+  const adjFinal = last.adjBench;
+  const dripFinal= last.total;
+  const divergePct = adjFinal ? ((dripFinal-adjFinal)/adjFinal*100) : null;
+
+  return{sym, series, inv, divCount:dCnt, splitCount:sCnt, rawEvents, eventLog,
+    totalPct:(last.total-inv)/inv*100, pricePct:(last.price-inv)/inv*100,
+    divDollar:last.divContrib, last, adjFinal, divergePct,
+    startDate:series[0].date, endDate:last.date,
+    cagr:calcCAGR(inv,last.total,series[0].date,last.date),
+    taxRate, currency:ccyLabel(sym)};
+}
+
+// ── Chart (#6 union+forward-fill) ─────────────────────────────────────────────
+function unionDates(data){
+  // Collect all dates across all series, sorted
+  const all=new Set();
+  data.forEach(d=>d.series.forEach(p=>all.add(p.date)));
+  return [...all].sort();
+}
+
+function getVal(p,baseInv){
+  let dollar;
+  if(currentView==='raw')             dollar=p.raw;
+  else if(currentView==='price')      dollar=p.price;
+  else if(currentView==='divcontrib') dollar=p.divContrib;
+  else                                dollar=p.total;
+  if(currentMode==='pct'&&currentView!=='raw')
+    return parseFloat(((dollar-baseInv)/baseInv*100).toFixed(3));
+  return parseFloat(dollar.toFixed(2));
+}
+
+
+// ── Cards (#1 tax info, #2 divergence, #5 currency, #7 CAD badge) ────────────
+function renderCards(){
+  allData.forEach((d,i)=>{
+    const card=document.getElementById('card'+i);
+    // Hide card if ticker series is hidden via legend click
+    if(!visible[i]){ card.className='card'; return; }
+    card.className='card vis';
+    const c=colours[i], pn=n=>n>=0?'p':'n';
+    const cagrStr=d.cagr!=null?fmtPct(d.cagr)+' / yr CAGR':'—';
+    const divEvs=d.rawEvents.filter(e=>e.type==='div').sort((a,b)=>a.date.localeCompare(b.date));
+    const splitEvs=d.rawEvents.filter(e=>e.type==='split').sort((a,b)=>a.date.localeCompare(b.date));
+    const divTipHtml=divEvs.length?divEvs.map(e=>`${e.date}: ${fmtD$(e.amount,4)}/sh`).join('<br>'):'No dividends in range';
+    const splitTipHtml=splitEvs.length?splitEvs.map(e=>`${e.date}: ${e.ratio}`).join('<br>'):'No splits in range';
+    const yahooUrl=`https://finance.yahoo.com/quote/${encodeURIComponent(d.sym)}`;
+    const fullName=stockNames[d.sym]||'';
+    // #2: divergence from adjClose benchmark
+    const divRow=d.divergePct!=null
+      ?`<div class="card-row" title="DRIP simulation vs Yahoo adjClose ratio method"><span>vs adj-close Δ</span><span class="card-val" style="color:${Math.abs(d.divergePct)<2?'var(--pos)':'#f0c040'}">${d.divergePct>=0?'+':''}${d.divergePct.toFixed(2)}%</span></div>`
+      :'';
+    // #1: tax row
+    const taxRow=`<div class="card-row"><span>Tax rate</span><span class="card-val">${(d.taxRate*100).toFixed(0)}%</span></div>`;
+    // #5 / #7: currency badge
+    const ccyBadge=`<span class="card-ccy">${d.currency}</span>`;
+
+    card.innerHTML=`
+      <div class="card-tkr" style="color:${c}">
+        <a class="card-tkr-link" href="${yahooUrl}" target="_blank" rel="noopener"
+           title="${fullName?fullName+' — Yahoo Finance':'Open Yahoo Finance'}" style="color:${c}">${d.sym}</a>${ccyBadge}
+      </div>
+      ${fullName?`<div style="font-size:9px;color:var(--txt-md);margin:-4px 0 8px;letter-spacing:.3px;line-height:1.4;">${fullName}</div>`:''}
+      <div class="card-row"><span>Price return</span><span class="card-val ${pn(d.pricePct)}">${fmtPct(d.pricePct)}</span></div>
+      <div class="card-row"><span>Div contribution</span><span class="card-val p">${fmt$(Math.abs(d.divDollar))}</span></div>
+      <div class="card-row"><span>Total Return %</span><span class="card-val ${pn(d.totalPct)}">${fmtPct(d.totalPct)}</span></div>
+      <div class="card-row"><span>Total Return $</span><span class="card-val ${pn(d.totalPct)}">${fmt$(d.last.total)}</span></div>
+      ${taxRow}
+      ${divRow}
+      <div class="card-row">
+        <span>Div events</span>
+        <span class="card-val"><span class="ev-wrap">${d.divCount}<span class="ev-tip">${divTipHtml}</span></span></span>
+      </div>
+      <div class="card-row">
+        <span>Splits</span>
+        <span class="card-val"><span class="ev-wrap">${d.splitCount}<span class="ev-tip">${splitTipHtml}</span></span></span>
+      </div>
+      <div class="card-row"><span>${d.startDate} →</span><span class="card-val">${d.endDate}</span></div>
+      <div class="card-final" style="color:${c}">${fmt$(d.last.total)}</div>
+      <div class="card-sub" style="color:${c}">${cagrStr}</div>`;
+  });
+  for(let i=allData.length;i<5;i++) document.getElementById('card'+i).className='card';
+}
+
+// ── #4 Event log table ────────────────────────────────────────────────────────
+function renderEventTable(){
+  const tbody=document.getElementById('evTableBody');
+  tbody.innerHTML='';
+  // Collect events only for visible tickers (respects legend toggle)
+  const rows=[];
+  allData.forEach((d,i)=>{
+    if(!visible[i]) return; // skip hidden series
+    d.eventLog.forEach(ev=>rows.push({...ev,colour:colours[i]}));
+  });
+  rows.sort((a,b)=>a.date.localeCompare(b.date));
+
+  if(!rows.length){
+    document.getElementById('evTableSection').style.display='none';
+    return;
+  }
+  document.getElementById('evTableSection').style.display='block';
+  document.getElementById('evLogCount').textContent=rows.length+' event'+(rows.length!==1?'s':'');
+
+  rows.forEach(ev=>{
+    const tr=document.createElement('tr');
+    if(ev.type==='div'){
+      tr.innerHTML=`
+        <td>${ev.date}</td>
+        <td style="color:${ev.colour};font-weight:600">${ev.sym}</td>
+        <td><span class="ev-badge div">DIV</span></td>
+        <td>${fmtD$(ev.divAmount,4)}/sh &nbsp;<span style="color:var(--txt-lo);font-size:9px">(net ${fmtD$(ev.divAmount*(1-taxRate),4)}/sh)</span></td>
+        <td>${ev.sharesAfter?.toFixed(4)||'—'}</td>
+        <td>+${ev.newShares?.toFixed(4)||'—'} shares</td>
+        <td>${fmt$(ev.portfolioVal)}</td>`;
+    } else {
+      tr.innerHTML=`
+        <td>${ev.date}</td>
+        <td style="color:${ev.colour};font-weight:600">${ev.sym}</td>
+        <td><span class="ev-badge split">SPLIT</span></td>
+        <td>${ev.ratio}:1</td>
+        <td>${ev.sharesBeforeEvent?.toFixed(4)||'—'} → ${(ev.sharesBeforeEvent*ev.ratio)?.toFixed(4)||'—'}</td>
+        <td>×${ev.ratio} shares</td>
+        <td>${fmt$(ev.portfolioVal)}</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Collapsible event log toggle ─────────────────────────────────────────────
+function toggleEvLog(){
+  const hdr=document.getElementById('evLogHdr');
+  const body=document.getElementById('evLogBody');
+  hdr.classList.toggle('open'); body.classList.toggle('open');
+}
+
+// ── Reference indices ──────────────────────────────────────────────────────────
+const INDEX_CONFIG = {
+  sp500:  { sym:'^GSPC',  label:'S&P 500',  colour:'#f0c040' },
+  nasdaq: { sym:'^IXIC',  label:'Nasdaq',   colour:'#60b0ff' },
+  tsx:    { sym:'^GSPTSE',label:'TSX',      colour:'#ff8040' },
+  vix:    { sym:'^VIX',   label:'VIX',      colour:'#c0c0c0' },
+  btc:    { sym:'BTC-USD',label:'BTC',      colour:'#f7931a' },
+};
+let activeIndices = {}; // key -> processed data (same shape as allData entries)
+
+async function toggleIndex(key, enabled){
+  if(!enabled){
+    delete activeIndices[key];
+    renderChartWithIndices();
+    return;
+  }
+  const cfg=INDEX_CONFIG[key];
+  const sd=document.getElementById('startDate').value;
+  const ed=document.getElementById('endDate').value;
+  if(!sd||!ed){
+    alert('Set a date range first, then enable an index.');
+    const cb=document.getElementById('idx-'+key); if(cb) cb.checked=false;
+    return;
+  }
+  setSt(`Fetching ${cfg.label}...`,'loading');
+  try{
+    const p1=toUnix(sd), p2=toUnix(ed)+86400;
+    const result=await fetchYahoo(cfg.sym,p1,p2);
+    const inv=getInv();
+    const ts=result.timestamp||[], cl=result.indicators?.quote?.[0]?.close||[];
+    const pts=[];
+    for(let i=0;i<ts.length;i++){
+      if(cl[i]==null||cl[i]<=0) continue;
+      pts.push({date:new Date(ts[i]*1000).toISOString().split('T')[0],close:cl[i]});
+    }
+    if(pts.length<2) throw new Error('No price data returned');
+    const base=pts[0].close;
+    const series=pts.map(p=>({
+      date:p.date, raw:p.close,
+      price:(p.close/base)*inv, total:(p.close/base)*inv,
+      divContrib:0,
+    }));
+    const last=series[series.length-1];
+    activeIndices[key]={
+      sym:cfg.label, series, inv,
+      divCount:0, splitCount:0, rawEvents:[], eventLog:[],
+      totalPct:(last.total-inv)/inv*100,
+      pricePct:(last.total-inv)/inv*100,
+      divDollar:0, last,
+      startDate:series[0].date, endDate:last.date,
+      cagr:calcCAGR(inv,last.total,series[0].date,last.date),
+      taxRate:0, currency:'', isIndex:true, indexKey:key
+    };
+    renderChartWithIndices();
+    const loaded=Object.values(activeIndices).map(d=>d.sym).join(', ');
+    setSt(`✓ Index overlaid: ${loaded}`,'ok');
+  }catch(e){
+    setSt('Failed to load '+cfg.label+': '+e.message,'error');
+    const cb=document.getElementById('idx-'+key); if(cb) cb.checked=false;
+    delete activeIndices[key];
+  }
+}
+
+// Render chart with both ticker data and any active reference indices.
+// Indices are rendered as extra dashed datasets — they do NOT go through
+// the module-level allData swap (which caused legend/event crashes).
+function renderChartWithIndices(){
+  if(!allData.length && !Object.keys(activeIndices).length) return;
+
+  // Build the union of dates across tickers + indices
+  const idxData = Object.values(activeIndices);
+  const allSeries = [...allData, ...idxData];
+  const allDates  = new Set();
+  allSeries.forEach(d=>d.series.forEach(p=>allDates.add(p.date)));
+  const labels = [...allDates].sort();
+  if(!labels.length) return;
+
+  const showVl = document.getElementById('showVlines').checked;
+  const skip   = Math.max(1, Math.floor(labels.length/60));
+  const xLabels = labels.map((l,i)=>i%skip===0?l.slice(0,7):'');
+  const isPct   = currentMode==='pct' && currentView!=='raw';
+
+  // Rebuild allEvents from allData only (not indices — they have no events)
+  allEvents=[];
+  allData.forEach((d,i)=>d.rawEvents.forEach(ev=>allEvents.push({...ev,colour:colours[i]})));
+
+  // Ticker datasets (using allData + visible[])
+  const tickerDatasets = allData.map((d,i)=>{
+    const map={}; d.series.forEach(p=>{map[p.date]=p;});
+    let last=null;
+    const vals=labels.map(l=>{ if(map[l]) last=map[l]; return last?getVal(last,d.inv):null; });
+    return{
+      label:d.sym, data:vals,
+      borderColor:colours[i], backgroundColor:colours[i]+'14',
+      borderWidth:2, pointRadius:0, pointHoverRadius:5,
+      tension:.12, fill:currentView==='divcontrib', spanGaps:true,
+      hidden: !visible[i],
+    };
+  });
+
+  // Index overlay datasets — always dashed, no fill, use index colour
+  const indexDatasets = idxData.map(d=>{
+    const cfg = INDEX_CONFIG[d.indexKey];
+    const col = cfg ? cfg.colour : '#aaaaaa';
+    const map={}; d.series.forEach(p=>{map[p.date]=p;});
+    let last=null;
+    const vals=labels.map(l=>{ if(map[l]) last=map[l]; return last?getVal(last,d.inv):null; });
+    return{
+      label:d.sym, data:vals,
+      borderColor:col, backgroundColor:'transparent',
+      borderWidth:1.5, borderDash:[6,4],
+      pointRadius:0, pointHoverRadius:4,
+      tension:.12, fill:false, spanGaps:true,
+    };
+  });
+
+  const datasets = [...tickerDatasets, ...indexDatasets];
+
+  document.getElementById('chartEmpty').style.display='none';
+  if(chartInst){chartInst.destroy();chartInst=null;}
+
+  // Event lines plugin (same as before)
+  const evPlugin={
+    id:'evLines',
+    afterDraw(chart){
+      if(!showVl) return;
+      const ctx=chart.ctx, xA=chart.scales.x, yA=chart.scales.y;
+      allEvents.forEach(ev=>{
+        const li=labels.indexOf(ev.date); if(li<0) return;
+        const meta=chart.getDatasetMeta(0); if(!meta||!meta.data[li]) return;
+        const x=meta.data[li].x; if(x<xA.left||x>xA.right) return;
+        const isDiv=ev.type==='div';
+        ctx.save();
+        ctx.beginPath(); ctx.setLineDash(isDiv?[5,5]:[2,4]);
+        ctx.strokeStyle=isDiv?ev.colour+'cc':'#c0c8d8aa';
+        ctx.lineWidth=1.2;
+        ctx.moveTo(x,yA.top); ctx.lineTo(x,yA.bottom); ctx.stroke();
+        ctx.beginPath(); ctx.setLineDash([]);
+        ctx.fillStyle=isDiv?ev.colour:'#c0c8d8';
+        ctx.arc(x,yA.top+5,3.5,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+    }
+  };
+
+  const crosshairPlugin={
+    id:'crosshair', _x:null, _y:null,
+    afterInit(chart){
+      chart.canvas.addEventListener('mousemove',e=>{
+        const r=chart.canvas.getBoundingClientRect();
+        this._x=e.clientX-r.left; this._y=e.clientY-r.top; chart.draw();
+      });
+      chart.canvas.addEventListener('mouseleave',()=>{ this._x=null; this._y=null; chart.draw(); });
+    },
+    afterDatasetsDraw(chart){
+      if(this._x===null||this._y===null) return;
+      const ctx=chart.ctx, xA=chart.scales.x, yA=chart.scales.y;
+      const x=this._x, y=this._y;
+      if(x<xA.left||x>xA.right||y<yA.top||y>yA.bottom) return;
+      ctx.save(); ctx.setLineDash([4,4]); ctx.lineWidth=1;
+      ctx.strokeStyle='rgba(180,200,220,.55)';
+      ctx.beginPath(); ctx.moveTo(x,yA.top); ctx.lineTo(x,yA.bottom); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xA.left,y); ctx.lineTo(xA.right,y); ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  chartInst=new Chart(document.getElementById('mainChart'),{
+    type:'line', data:{labels:xLabels,datasets},
+    plugins:[evPlugin,crosshairPlugin],
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:{duration:400},
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1e2d40', borderColor:'#2e3f52', borderWidth:1,
+          titleColor:'#8aa0b8', bodyColor:'#dde6f0', padding:12,
+          titleFont:{family:'IBM Plex Mono',size:10},
+          bodyFont:{family:'IBM Plex Mono',size:11},
+          callbacks:{
+            title:items=>{ const idx=items[0]?.dataIndex; return labels[idx]||''; },
+            afterTitle:items=>{
+              const idx=items[0]?.dataIndex, date=labels[idx]; if(!date) return '';
+              const evs=allEvents.filter(e=>e.date===date); if(!evs.length) return '';
+              return evs.map(e=>e.type==='div'
+                ?`  📅 ${e.sym} Div: ${fmtD$(e.amount,4)}/sh`
+                :`  🔀 ${e.sym} Split ${e.ratio}`).join('\n');
+            },
+            label:ctx=>{
+              const v=ctx.parsed.y; if(v==null) return ` ${ctx.dataset.label}: —`;
+              if(currentView==='raw') return ` ${ctx.dataset.label}: $${v.toFixed(2)}`;
+              if(isPct) return ` ${ctx.dataset.label}: ${v>=0?'+':''}${v.toFixed(2)}%`;
+              return ` ${ctx.dataset.label}: ${fmt$(v)}`;
+            }
+          }
+        },
+        zoom:{
+          zoom:{wheel:{enabled:true,speed:.08,modifierKey:'ctrl'},pinch:{enabled:true},mode:'x'},
+          pan:{enabled:true,mode:'x'}, limits:{x:{minRange:10}}
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#6a7e94',font:{family:'IBM Plex Mono',size:9},maxRotation:0,autoSkip:true},
+           grid:{color:'var(--grid)'},border:{color:'var(--border)'}},
+        y:{
+          ticks:{color:'#6a7e94',font:{family:'IBM Plex Mono',size:9},
+            callback:v=>currentView==='raw'?'$'+v.toFixed(0):isPct?(v>=0?'+':'')+v.toFixed(1)+'%':fmt$(v)},
+          grid:{color:'var(--grid)'},border:{color:'var(--border)'},
+          // Recalculate axis bounds using only visible (non-hidden) datasets
+          afterDataLimits(scale){
+            const chart=scale.chart;
+            let mn=Infinity, mx=-Infinity;
+            chart.data.datasets.forEach((ds,idx)=>{
+              if(chart.getDatasetMeta(idx).hidden) return;
+              ds.data.forEach(v=>{ if(v==null||isNaN(v)) return; if(v<mn) mn=v; if(v>mx) mx=v; });
+            });
+            if(!isFinite(mn)||!isFinite(mx)) return;
+            const range=mx-mn, pad=range>0?range*0.06:Math.abs(mx)*0.06||1;
+            scale.min=mn-pad; scale.max=mx+pad;
+          }
+        }
+      }
+    }
+  });
+
+  // Legend — tickers only (indices shown inline in chart with dashed lines)
+  allData.forEach((d,i)=>{
+    const leg=document.getElementById('leg'+i);
+    if(!leg) return;
+    leg.classList.add('vis'); leg.classList.toggle('muted',!visible[i]);
+    document.getElementById('leg'+i+'-dot').style.background=colours[i];
+    document.getElementById('leg'+i+'-lbl').textContent=d.sym;
+    const tip=document.getElementById('leg'+i+'-tip');
+    if(tip) tip.textContent=stockNames[d.sym]||d.sym;
+  });
+  for(let i=allData.length;i<5;i++){
+    const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis');
+  }
+
+  // Index legend pills — append after ticker legend items
+  const legendEl=document.getElementById('legend');
+  legendEl.querySelectorAll('.idx-leg-item').forEach(el=>el.remove()); // clear old
+  idxData.forEach(d=>{
+    const cfg=INDEX_CONFIG[d.indexKey];
+    const col=cfg?cfg.colour:'#aaa';
+    const pill=document.createElement('div');
+    pill.className='leg-item vis idx-leg-item';
+    pill.style.cursor='default';
+    pill.style.opacity='0.75';
+    pill.innerHTML=`<div class="leg-dot" style="background:${col};opacity:.7;"></div><span style="font-style:italic">${d.sym}</span>`;
+    legendEl.appendChild(pill);
+  });
+}
+
+// ── Run ───────────────────────────────────────────────────────────────────────
+async function runAnalysis(){
+  const btn=document.getElementById('runBtn'); btn.disabled=true;
+  allData=[]; allEvents=[]; stockNames={}; visible=[true,true,true,true,true];
+
+  const tickers=[0,1,2,3,4].map(i=>document.getElementById('t'+i).value.trim().toUpperCase()).filter(Boolean);
+  if(!tickers.length){setSt('Enter at least one ticker.','error');btn.disabled=false;return;}
+
+  const sd=document.getElementById('startDate').value, ed=document.getElementById('endDate').value;
+  if(!sd||!ed||sd>=ed){setSt('Invalid date range.','error');btn.disabled=false;return;}
+
+  const p1=toUnix(sd), p2=toUnix(ed)+86400, errors=[];
+
+  for(let i=0;i<tickers.length;i++){
+    const sym=tickers[i];
+    try{
+      setSt(`Fetching ${sym}... (${i+1} of ${tickers.length})`,'loading');
+      if(i>0) await sleep(400);
+      const result=await fetchYahoo(sym,p1,p2);
+      const meta=result.meta||{};
+      stockNames[sym]=meta.longName||meta.shortName||sym;
+      allData.push(processYahoo(result,sym));
+    }catch(e){ errors.push(`${sym}: ${e.message}`); }
+  }
+
+  btn.disabled=false;
+  if(!allData.length){setSt('All tickers failed:\n'+errors.join('\n'),'error');return;}
+
+  // Build status with divergence warnings
+  let statusMsg='✓ Loaded: '+allData.map(d=>d.sym).join(', ');
+  const divWarns=allData.filter(d=>d.divergePct!=null&&Math.abs(d.divergePct)>5);
+  if(divWarns.length) statusMsg+='\n⚠ Large divergence from adjClose benchmark: '+divWarns.map(d=>`${d.sym} (${d.divergePct>0?'+':''}${d.divergePct.toFixed(1)}%)`).join(', ')+' — check Yahoo data quality';
+  if(errors.length) statusMsg+='\n✗ Failed: '+errors.join(' | ');
+  setSt(statusMsg, errors.length?'loading':'ok');
+
+  renderChartWithIndices(); renderCards(); renderEventTable();
+  saveSettings();
+}
+</script>
+<div class="save-flash" id="saveFlash">✓ Settings saved</div>
+</body>
+</html>
