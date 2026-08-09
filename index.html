@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Total Return Comparator</title>
+<title>Total Return Calculator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
@@ -91,7 +91,7 @@ body{font-family:'IBM Plex Mono',monospace;color:var(--body-txt);padding:24px;mi
 .ticker-input::placeholder{color:var(--txt-lo);font-weight:400;letter-spacing:1px;}
 
 /* Controls */
-.ctrl-row{display:grid;grid-template-columns:175px 175px 160px 220px;gap:10px;align-items:flex-end;margin-bottom:16px;}
+.ctrl-row{display:grid;grid-template-columns:175px 175px 160px 220px;gap:10px;align-items:start;margin-bottom:16px;}
 input[type="date"],.inv-input,.sel-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--body-txt);
   font-family:'IBM Plex Mono',monospace;font-size:18px;padding:8px 10px;border-radius:5px;outline:none;
   transition:border-color .2s;color-scheme:dark;}
@@ -220,6 +220,15 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 /* Calc mode note */
 .calc-note{font-size:13.5px;color:var(--txt-lo);margin-top:4px;letter-spacing:.3px;}
 
+/* Tax button group */
+.tax-grp{display:flex;width:100%;border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+.tax-btn{flex:1;background:var(--bg-input);border:none;border-right:1px solid var(--border-sub);
+  color:var(--txt-md);font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:500;
+  letter-spacing:.3px;padding:9px 4px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tax-btn:last-child{border-right:none;}
+.tax-btn:hover{color:var(--body-txt);background:var(--border-sub);}
+.tax-btn.on{background:var(--accent);color:var(--bg-base);font-weight:600;}
+
 
 /* Clear button */
 .clear-btn{background:transparent;border:1px solid var(--border-sub);color:var(--txt-lo);
@@ -241,12 +250,45 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 .idx-check:hover span{opacity:1;}
 .idx-check span{opacity:.8;transition:opacity .15s;}
 .note{font-size:13.5px;color:var(--border);text-align:center;letter-spacing:1.5px;text-transform:uppercase;line-height:1.8;}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width:1100px){
+  .cards{grid-template-columns:repeat(3,1fr);}
+}
+@media (max-width:860px){
+  body{padding:14px;}
+  .title{font-size:38px;}
+  .subtitle{font-size:13px;}
+  .ticker-row{grid-template-columns:repeat(3,1fr);}
+  .ctrl-row{grid-template-columns:1fr 1fr;}
+  .cards{grid-template-columns:repeat(2,1fr);}
+  .chart-wrap{height:340px;}
+  .zoom-hint-txt{display:none;}
+  .tgl{font-size:13.5px;padding:5px 10px;}
+}
+@media (max-width:560px){
+  body{padding:10px;}
+  .title{font-size:26px;letter-spacing:2px;}
+  .subtitle{font-size:12px;}
+  .header{gap:8px;margin-bottom:12px;}
+  .ticker-row{grid-template-columns:repeat(2,1fr);}
+  .ctrl-row{grid-template-columns:1fr;}
+  .cards{grid-template-columns:1fr;}
+  .chart-wrap{height:260px;}
+  .tgl{font-size:12px;padding:5px 8px;letter-spacing:.3px;}
+  .run-btn,.clear-btn{font-size:15px;padding:8px 12px;}
+  .card-final{font-size:24px;}
+  input[type="date"],.inv-input,.sel-input{font-size:16px;}
+  .ticker-input{font-size:18px;}
+  .ev-table{font-size:13.5px;}
+  .ev-table th,.ev-table td{padding:4px 6px;}
+}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="title">Total Return Comparator</div>
+  <div class="title">Total Return Calculator</div>
   <div class="subtitle">Yahoo Finance · Price + Dividends + Splits · DRIP Reinvested</div>
   <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙 Dark</button>
 </div>
@@ -276,17 +318,18 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <div><div class="sec-label">Start date</div><input type="date" id="startDate" onchange="saveSettings()"></div>
   <div><div class="sec-label">End date</div><input type="date" id="endDate" onchange="saveSettings()"></div>
   <div><div class="sec-label">Investment ($)</div><input class="inv-input" type="text" id="initInv" value="10,000" inputmode="numeric"></div>
-  <!-- #1 Tax rate selector -->
   <div>
     <div class="sec-label">Tax on dividends</div>
-    <select class="sel-input" id="taxRate" onchange="onTaxChange()">
-      <option value="0">0% — Tax-free (TFSA/RRSP)</option>
-      <option value="0.15">15% — Preferential rate</option>
-      <option value="0.25" selected>25% — Mid bracket</option>
-      <option value="0.40">40% — High bracket</option>
-      <option value="custom">Custom…</option>
-    </select>
-    <div class="calc-note" id="taxNote">Dividends taxed before reinvestment</div>
+    <div class="tax-grp">
+      <button class="tax-btn" data-val="0"    onclick="setTax(0)">0%</button>
+      <button class="tax-btn" data-val="0.15" onclick="setTax(0.15)">15%</button>
+      <button class="tax-btn on" data-val="0.25" onclick="setTax(0.25)">25%</button>
+      <button class="tax-btn" data-val="0.4"  onclick="setTax(0.4)">40%</button>
+      <button class="tax-btn" data-val="custom" onclick="setTaxCustom()">…</button>
+    </div>
+    <input class="inv-input" id="taxCustomInp" type="text" placeholder="Custom %" inputmode="numeric"
+      style="display:none;margin-top:6px;font-size:16px;padding:6px 10px;" oninput="onTaxCustomInput(this)">
+    <div class="calc-note" id="taxNote">25% mid bracket</div>
   </div>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:16px;">
@@ -305,15 +348,19 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 </div>
 <div class="sec-label">Chart view</div>
 <div class="tgl-row">
-  <button class="tgl" id="tog-raw"        onclick="setView('raw')">Price (Raw $)</button>
-  <button class="tgl" id="tog-price"      onclick="setView('price')">Price Return</button>
-  <button class="tgl" id="tog-divcontrib" onclick="setView('divcontrib')">Div + Split Contribution</button>
-  <button class="tgl on" id="tog-total"   onclick="setView('total')">Total Return</button>
-  <div class="mode-toggle" title="Switch between dollar value and % return">
-    <button class="mode-btn on" id="mode-dollar" onclick="setMode('dollar')">$</button>
-    <button class="mode-btn"    id="mode-pct"    onclick="setMode('pct')">%</button>
+  <button class="tgl" id="tog-raw"        onclick="setView('raw')"
+    title="Raw closing price, no adjustments">Price (Raw $)</button>
+  <button class="tgl" id="tog-price"      onclick="setView('price')"
+    title="Price movement only — dividends excluded">Price Return</button>
+  <button class="tgl" id="tog-divcontrib" onclick="setView('divcontrib')"
+    title="Extra value added by dividends &amp; splits on top of price">Div + Split Contribution</button>
+  <button class="tgl on" id="tog-total"   onclick="setView('total')"
+    title="Price + dividends reinvested (DRIP) + splits">Total Return</button>
+  <div class="mode-toggle" title="Dollar value vs % return">
+    <button class="mode-btn on" id="mode-dollar" onclick="setMode('dollar')" title="Dollar value">$</button>
+    <button class="mode-btn"    id="mode-pct"    onclick="setMode('pct')"    title="% gain / loss">%</button>
   </div>
-  <label class="vlines-lbl">
+  <label class="vlines-lbl" title="Mark dividends &amp; splits on the chart">
     <input type="checkbox" id="showVlines" checked onchange="renderChartWithIndices();saveSettings()">
     Div/Split Lines
   </label>
@@ -322,6 +369,8 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
     <button class="zoom-btn" onclick="doZoom('out')" title="Zoom out (Ctrl+Scroll)">−</button>
     <button class="zoom-rst" onclick="doZoomReset()">Reset</button>
   </div>
+  <button class="tgl" id="tog-crop" onclick="toggleCropMode()" title="Drag on chart to select a date range, then recalculate from that window">✂ Crop</button>
+  <button class="tgl" id="recalc-btn" onclick="recalculateSelection()" style="display:none;border-color:var(--pos);color:var(--pos);">↩ Recalculate</button>
   <span class="zoom-hint-txt">Ctrl+Scroll to zoom · Drag to pan</span>
 </div>
 
@@ -408,6 +457,8 @@ let openPicker  = null;
 let taxRate     = 0.25; // default 25%
 let currentTheme = 'dark'; // 'dark' or 'light'
 let activeIndices = {}; // key -> processed reference-index data (S&P500, Nasdaq, etc.)
+let cropMode    = false;
+let chartLabels = []; // full sorted date array, kept in sync with the rendered chart
 
 // ── Theme (dark/light mode) ────────────────────────────────────────────────────
 const THEME_KEY = 'trc_theme_v1';
@@ -452,7 +503,7 @@ function saveSettings(){
       startDate: document.getElementById('startDate')?.value||'',
       endDate:   document.getElementById('endDate')?.value||'',
       initInv:   document.getElementById('initInv')?.value||'10,000',
-      taxRate:   document.getElementById('taxRate')?.value||'0.25',
+      taxRate:   String(taxRate),
       colours:   [...colours],
       view:      currentView,
       mode:      currentMode,
@@ -479,13 +530,7 @@ function loadSettings(){
     // Investment
     if(cfg.initInv)   document.getElementById('initInv').value=cfg.initInv;
     // Tax rate
-    if(cfg.taxRate){
-      const sel=document.getElementById('taxRate');
-      // Try to match a preset option; fall back to 0.25
-      const opts=[...sel.options].map(o=>o.value);
-      sel.value = opts.includes(cfg.taxRate) ? cfg.taxRate : '0.25';
-      onTaxChange();
-    }
+    if(cfg.taxRate) applyTaxUI(cfg.taxRate);
     // Colours
     if(Array.isArray(cfg.colours) && cfg.colours.length===5){
       cfg.colours.forEach((c,i)=>{ colours[i]=c; });
@@ -525,8 +570,7 @@ function clearAll(){
   document.getElementById('startDate').value=s.toISOString().split('T')[0];
   document.getElementById('endDate').value=end;
   document.getElementById('initInv').value='10,000';
-  document.getElementById('taxRate').value='0.25'; taxRate=0.25;
-  document.getElementById('taxNote').textContent='Dividends taxed before reinvestment';
+  applyTaxUI('0.25');
   [0,1,2,3,4].forEach(i=>{ const el=document.getElementById('t'+i); if(el) el.value=i<3?['AAPL','MSFT','NVDA'][i]:''; });
   // Reset colours to defaults
   colours=[...DEFAULT_COLOURS];
@@ -553,20 +597,35 @@ function clearAll(){
 })();
 
 // ── Tax rate ──────────────────────────────────────────────────────────────────
-function onTaxChange(){
-  const sel=document.getElementById('taxRate');
-  if(sel.value==='custom'){
-    const v=parseFloat(prompt('Enter custom tax rate (0–100):')||'');
-    if(!isNaN(v)&&v>=0&&v<=100){
-      taxRate=v/100;
-      document.getElementById('taxNote').textContent=`${v}% tax on dividends before reinvestment`;
-    } else { sel.value='0.25'; taxRate=0.25; }
-  } else {
-    taxRate=parseFloat(sel.value);
-    const labels={'0':'Tax-free (TFSA/RRSP)','0.15':'15% preferential','0.25':'25% mid bracket','0.40':'40% high bracket'};
-    document.getElementById('taxNote').textContent=labels[sel.value]||`${(taxRate*100).toFixed(0)}% tax on dividends`;
-  }
+const TAX_LABELS={'0':'Tax-free (TFSA/RRSP)','0.15':'15% preferential','0.25':'25% mid bracket','0.4':'40% high bracket'};
+
+function applyTaxUI(valStr){
+  const rate=parseFloat(valStr);
+  if(isNaN(rate)||rate<0) return;
+  taxRate=rate;
+  const key=String(rate);
+  const isPreset=TAX_LABELS.hasOwnProperty(key);
+  document.querySelectorAll('.tax-btn[data-val]').forEach(btn=>{
+    btn.classList.toggle('on', btn.dataset.val===key || (btn.dataset.val==='custom'&&!isPreset));
+  });
+  const ci=document.getElementById('taxCustomInp');
+  if(ci){ ci.style.display=isPreset?'none':''; if(!isPreset) ci.value=(rate*100).toFixed(0); }
+  document.getElementById('taxNote').textContent=TAX_LABELS[key]||`${(rate*100).toFixed(0)}% tax on dividends`;
   saveSettings();
+}
+function setTax(val){ applyTaxUI(String(val)); }
+function setTaxCustom(){
+  document.querySelectorAll('.tax-btn[data-val]').forEach(btn=>btn.classList.toggle('on',btn.dataset.val==='custom'));
+  const ci=document.getElementById('taxCustomInp');
+  ci.style.display=''; ci.focus();
+}
+function onTaxCustomInput(inp){
+  const v=parseFloat(inp.value.replace(/[^0-9.]/g,''));
+  if(!isNaN(v)&&v>=0&&v<=100){
+    taxRate=v/100;
+    document.getElementById('taxNote').textContent=`${v.toFixed(0)}% tax on dividends`;
+    saveSettings();
+  }
 }
 
 // ── Investment formatting ─────────────────────────────────────────────────────
@@ -660,6 +719,40 @@ function toggleSeries(i){
   if(chartInst){ chartInst.getDatasetMeta(i).hidden=!visible[i]; chartInst.update(); }
   renderCards();       // sync card show/hide
   renderEventTable();  // sync event log
+}
+function highlightLegend(idx){
+  if(!chartInst) return;
+  chartInst.data.datasets.forEach((ds,i)=>{ ds.borderWidth=i===idx?3.5:0.8; });
+  chartInst.update('none');
+}
+function unhighlightLegend(){
+  if(!chartInst) return;
+  chartInst.data.datasets.forEach((ds,i)=>{ ds.borderWidth=i<allData.length?2:1.5; });
+  chartInst.update('none');
+}
+function toggleCropMode(){
+  cropMode=!cropMode;
+  document.getElementById('tog-crop').classList.toggle('on',cropMode);
+  if(cropMode){
+    setSt('Crop mode ON — drag on chart to select a time range, then click ↩ Recalculate.','loading');
+  } else {
+    document.getElementById('recalc-btn').style.display='none';
+    setSt('Crop mode OFF.','idle');
+  }
+  if(allData.length||Object.keys(activeIndices).length) renderChartWithIndices();
+}
+function recalculateSelection(){
+  if(!chartInst||!chartLabels.length) return;
+  const xS=chartInst.scales.x;
+  const minIdx=Math.max(0,Math.round(xS.min));
+  const maxIdx=Math.min(chartLabels.length-1,Math.round(xS.max));
+  if(minIdx>=maxIdx){setSt('Invalid selection — try a wider drag.','error');return;}
+  document.getElementById('startDate').value=chartLabels[minIdx];
+  document.getElementById('endDate').value=chartLabels[maxIdx];
+  cropMode=false;
+  document.getElementById('tog-crop').classList.remove('on');
+  document.getElementById('recalc-btn').style.display='none';
+  runAnalysis();
 }
 function toUnix(s){ return Math.floor(new Date(s+'T12:00:00Z').getTime()/1000); }
 function fmt$(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
@@ -1053,6 +1146,7 @@ function renderChartWithIndices(){
   const allDates  = new Set();
   allSeries.forEach(d=>d.series.forEach(p=>allDates.add(p.date)));
   const labels = [...allDates].sort();
+  chartLabels = labels;
   if(!labels.length) return;
 
   const showVl = document.getElementById('showVlines').checked;
@@ -1173,12 +1267,27 @@ function renderChartWithIndices(){
               if(currentView==='raw') return ` ${ctx.dataset.label}: $${v.toFixed(2)}`;
               if(isPct) return ` ${ctx.dataset.label}: ${v>=0?'+':''}${v.toFixed(2)}%`;
               return ` ${ctx.dataset.label}: ${fmt$(v)}`;
+            },
+            labelColor:ctx=>{
+              const col=ctx.dataset.borderColor||'#aaa';
+              return{borderColor:col,backgroundColor:col,borderWidth:2,borderRadius:2};
             }
           }
         },
         zoom:{
-          zoom:{wheel:{enabled:true,speed:.08,modifierKey:'ctrl'},pinch:{enabled:true},mode:'x'},
-          pan:{enabled:true,mode:'x'}, limits:{x:{minRange:10}}
+          zoom:{
+            wheel:{enabled:!cropMode,speed:.08,modifierKey:'ctrl'},
+            drag:{enabled:cropMode},
+            pinch:{enabled:true},
+            mode:'x',
+            onZoomComplete(){
+              if(cropMode){
+                document.getElementById('recalc-btn').style.display='';
+                setSt('Range selected — click ↩ Recalculate to rerun from this window.','ok');
+              }
+            }
+          },
+          pan:{enabled:!cropMode,mode:'x'}, limits:{x:{minRange:10}}
         }
       },
       scales:{
@@ -1215,6 +1324,8 @@ function renderChartWithIndices(){
     document.getElementById('leg'+i+'-lbl').textContent=d.sym;
     const tip=document.getElementById('leg'+i+'-tip');
     if(tip) tip.textContent=stockNames[d.sym]||d.sym;
+    leg.onmouseenter=()=>highlightLegend(i);
+    leg.onmouseleave=()=>unhighlightLegend();
   });
   for(let i=allData.length;i<5;i++){
     const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis');
@@ -1239,6 +1350,9 @@ function renderChartWithIndices(){
 async function runAnalysis(){
   const btn=document.getElementById('runBtn'); btn.disabled=true;
   allData=[]; allEvents=[]; stockNames={}; visible=[true,true,true,true,true];
+  cropMode=false;
+  document.getElementById('tog-crop')?.classList.remove('on');
+  document.getElementById('recalc-btn').style.display='none';
 
   const tickers=[0,1,2,3,4].map(i=>document.getElementById('t'+i).value.trim().toUpperCase()).filter(Boolean);
   if(!tickers.length){setSt('Enter at least one ticker.','error');btn.disabled=false;return;}
