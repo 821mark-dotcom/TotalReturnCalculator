@@ -295,20 +295,19 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 
 <div class="cors-bar">
   <div class="cors-dot"></div>
-  <div class="cors-txt">CORS extension required — <strong>"Allow CORS"</strong> must be <strong>enabled</strong> in Chrome &nbsp;·&nbsp; TSX: <strong>RY.TO</strong> &nbsp;·&nbsp; US: <strong>AAPL</strong></div>
-  <button class="test-cors" onclick="testConnection()">⚡ Test CORS</button>
+  <div class="cors-txt">Data via Cloudflare proxy — works on <strong>any browser or device</strong>, no extension needed &nbsp;·&nbsp; TSX: <strong>RY.TO</strong> &nbsp;·&nbsp; US: <strong>AAPL</strong></div>
+  <button class="test-cors" onclick="testConnection()">⚡ Test Connection</button>
 </div>
 
 <div class="cors-error" id="cors-error-box">
-  <div class="cors-err-title">⚠ CORS Blocked — Yahoo Finance cannot be reached from this file</div>
-  You need a browser extension to allow cross-origin requests. Follow these steps:
+  <div class="cors-err-title">⚠ Connection Failed — Cloudflare proxy unreachable</div>
+  The proxy server could not reach Yahoo Finance. This is usually temporary. Try:
   <ol>
-    <li>Install the free extension: <a href="https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf" target="_blank" rel="noopener">Allow CORS: Access-Control-Allow-Origin →</a></li>
-    <li>After installing, click the extension icon in the Chrome toolbar (puzzle piece → pin it)</li>
-    <li>Click the extension icon — it should turn <strong>orange/active</strong></li>
-    <li>Come back here and click <strong>⚡ Test CORS</strong> again</li>
+    <li>Wait 30 seconds and click <strong>⚡ Test Connection</strong> again</li>
+    <li>Check your internet connection</li>
+    <li>Yahoo Finance may be temporarily down — try again in a few minutes</li>
   </ol>
-  <em>Toggle the extension off when not using this dashboard for best security.</em>
+  <em>If the problem persists, the Cloudflare Worker may need to be redeployed.</em>
 </div>
 
 <div class="sec-label" style="margin-bottom:10px;">Tickers (up to 5) — click the dot to change colour</div>
@@ -374,7 +373,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <span class="zoom-hint-txt">Ctrl+Scroll to zoom · Drag to pan</span>
 </div>
 
-<div class="status idle" id="status">Click ⚡ Test CORS first, then Run Analysis.</div>
+<div class="status idle" id="status">Click ⚡ Test Connection to verify, then Run Analysis.</div>
 
 <div class="legend" id="legend">
   <div class="leg-item" id="leg0" onclick="toggleSeries(0)"><div class="leg-dot" id="leg0-dot"></div><span id="leg0-lbl"></span><div class="leg-tip" id="leg0-tip"></div></div>
@@ -441,7 +440,7 @@ const PALETTE = [
   '#2b79ee','#7d98e8', '#2b3eee','#827de8', '#522bee','#a27de8', '#8c2bee','#c37de8',
   '#c72bee','#e37de8', '#ee2bda','#e87dcd', '#ee2ba0','#e87dad', '#ee2b65','#e87d8d',
 ];
-const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart';
+const YAHOO_BASE = 'https://late-salad-e369.821mark.workers.dev/v8/finance/chart';
 const YAHOO_HDR  = {'User-Agent':'Mozilla/5.0','Accept':'application/json'};
 
 // ── State ─────────────────────────────────────────────────────────────────────
