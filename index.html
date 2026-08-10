@@ -17,8 +17,6 @@
   --accent:#2ab5a5; --acc-dim:rgba(42,181,165,.12);
   --grid:#1c2635; --pos:#3dbdaa; --neg:#f07060;
   --body-txt:#dde6f0;
-  --cors-bg:#152015; --cors-border:#2e5e2e; --cors-txt:#7acc7a;
-  --cors-err-bg:#1a0d0d; --cors-err-border:#6a2020; --cors-err-txt:#e07070;
   --tooltip-bg:#1e2d40; --tooltip-border:#2e3f52;
 }
 [data-theme="light"]{
@@ -28,8 +26,6 @@
   --accent:#1f9588; --acc-dim:rgba(31,149,136,.10);
   --grid:#e4e9f0; --pos:#1f9588; --neg:#d9483a;
   --body-txt:#222a36;
-  --cors-bg:#eef8ee; --cors-border:#a8d8a8; --cors-txt:#2d7a2d;
-  --cors-err-bg:#fdeeec; --cors-err-border:#e8b0a8; --cors-err-txt:#b8392a;
   --tooltip-bg:#ffffff; --tooltip-border:#c8d2e0;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -44,26 +40,6 @@ body{font-family:'IBM Plex Mono',monospace;color:var(--body-txt);padding:24px;mi
 .title{font-family:'Bebas Neue',sans-serif;font-size:51px;letter-spacing:3px;color:var(--txt-hi);}
 .subtitle{font-size:15px;color:var(--txt-md);letter-spacing:1.5px;text-transform:uppercase;}
 
-/* CORS bar */
-.cors-bar{background:var(--cors-bg);border:1px solid var(--cors-border);border-radius:6px;padding:10px 16px;margin-bottom:10px;
-  font-size:15px;color:var(--cors-txt);letter-spacing:.8px;line-height:1.7;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.cors-dot{width:8px;height:8px;border-radius:50%;background:#3dbd3d;flex-shrink:0;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.cors-txt{flex:1;}
-.test-cors{background:#1a3a1a;border:1px solid #3dbd3d;color:#5dd85d;font-family:'IBM Plex Mono',monospace;
-  font-size:15px;letter-spacing:1px;padding:5px 14px;border-radius:4px;cursor:pointer;text-transform:uppercase;
-  transition:all .15s;white-space:nowrap;}
-.test-cors:hover{background:#3dbd3d;color:#0f1318;}
-
-/* CORS error box */
-.cors-error{display:none;background:var(--cors-err-bg);border:1px solid var(--cors-err-border);border-radius:6px;
-  padding:14px 18px;margin-bottom:12px;font-size:16.5px;color:var(--cors-err-txt);line-height:1.9;}
-.cors-error strong{color:#f09090;}
-.cors-error ol{margin:8px 0 8px 18px;color:#c06060;}
-.cors-error ol li{margin-bottom:2px;}
-.cors-error a{color:#5aacdf;text-decoration:none;border-bottom:1px dotted #5aacdf;}
-.cors-error a:hover{color:#8acff5;}
-.cors-err-title{font-size:18px;font-weight:600;color:#f09090;margin-bottom:6px;letter-spacing:.5px;}
 
 .sec-label{font-size:13.5px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
 
@@ -369,22 +345,6 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙 Dark</button>
 </div>
 
-<div class="cors-bar">
-  <div class="cors-dot"></div>
-  <div class="cors-txt">Data via Cloudflare proxy — works on <strong>any browser or device</strong>, no extension needed &nbsp;·&nbsp; TSX: <strong>RY.TO</strong> &nbsp;·&nbsp; US: <strong>AAPL</strong></div>
-  <button class="test-cors" onclick="testConnection()">⚡ Test Connection</button>
-</div>
-
-<div class="cors-error" id="cors-error-box">
-  <div class="cors-err-title">⚠ Connection Failed — Cloudflare proxy unreachable</div>
-  The proxy server could not reach Yahoo Finance. This is usually temporary. Try:
-  <ol>
-    <li>Wait 30 seconds and click <strong>⚡ Test Connection</strong> again</li>
-    <li>Check your internet connection</li>
-    <li>Yahoo Finance may be temporarily down — try again in a few minutes</li>
-  </ol>
-  <em>If the problem persists, the Cloudflare Worker may need to be redeployed.</em>
-</div>
 
 <!-- Mode tabs -->
 <div class="app-mode-tabs">
@@ -506,7 +466,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <span class="zoom-hint-txt">Ctrl+Scroll to zoom · Drag to pan</span>
 </div>
 
-<div class="status idle" id="status">Click ⚡ Test Connection to verify, then Run Analysis.</div>
+<div class="status idle" id="status">Enter tickers and click Run Analysis.</div>
 
 <div class="legend" id="legend">
   <div class="leg-item" id="leg0" onclick="toggleSeries(0)"><div class="leg-dot" id="leg0-dot"></div><span id="leg0-lbl"></span><div class="leg-tip" id="leg0-tip"></div></div>
@@ -552,7 +512,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 </div>
 
 <div class="note">
-  Yahoo Finance v8 · DRIP simulated at ex-date · After-tax dividend reinvestment · Splits validated<br>
+  Yahoo Finance · DRIP simulated at ex-date · After-tax dividend reinvestment · Splits validated<br>
   TSX tickers: RY.TO format · Prices in native currency — mix USD/CAD with care
 </div>
 
@@ -958,20 +918,6 @@ async function fetchYahoo(sym,p1,p2){
   return r;
 }
 
-async function testConnection(){
-  setSt('Testing Yahoo Finance + CORS...','loading');
-  try{
-    const p2=Math.floor(Date.now()/1000), p1=p2-7*86400;
-    const r=await fetchYahoo('AAPL',p1,p2);
-    const last=r.indicators?.quote?.[0]?.close?.filter(c=>c!=null).pop();
-    const date=new Date(r.timestamp[r.timestamp.length-1]*1000).toISOString().split('T')[0];
-    setSt(`✓ CORS working! AAPL last close: $${last?.toFixed(2)} (${date}) — ready.`,'ok');
-    document.getElementById('cors-error-box').style.display='none';
-  }catch(e){
-    setSt(`✗ CORS blocked — see instructions below.`,'error');
-    document.getElementById('cors-error-box').style.display='block';
-  }
-}
 
 // ── Process data (improvements #1–#3, #6) ────────────────────────────────────
 function processYahoo(result,sym){
