@@ -91,7 +91,24 @@ body{font-family:'IBM Plex Mono',monospace;color:var(--body-txt);padding:24px;mi
 .ticker-input::placeholder{color:var(--txt-lo);font-weight:400;letter-spacing:1px;}
 
 /* Controls */
-.ctrl-row{display:grid;grid-template-columns:175px 175px 160px 220px;gap:10px;align-items:start;margin-bottom:16px;}
+.ctrl-row{display:grid;grid-template-columns:160px auto;gap:10px;align-items:start;margin-bottom:16px;}
+
+/* ── Date range section ───────────────────────────────────────────────────── */
+.date-range-section{margin-bottom:14px;}
+.date-range-hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.date-range-hdr .sec-label{margin-bottom:0;}
+.date-mode-toggle{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.dmode-btn{background:var(--bg-input);border:none;color:var(--txt-md);font-family:'IBM Plex Mono',monospace;
+  font-size:13.5px;letter-spacing:1px;padding:5px 14px;cursor:pointer;transition:all .15s;}
+.dmode-btn:first-child{border-right:1px solid var(--border-sub);}
+.dmode-btn.on{background:var(--accent);color:var(--bg-base);font-weight:600;}
+.preset-row{display:flex;gap:5px;flex-wrap:wrap;}
+.preset-btn{background:var(--bg-input);border:1px solid var(--border-sub);color:var(--txt-md);
+  font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.5px;padding:7px 12px;
+  border-radius:4px;cursor:pointer;transition:all .15s;}
+.preset-btn:hover{color:var(--body-txt);border-color:var(--border);}
+.preset-btn.on{border-color:var(--accent);color:var(--accent);background:var(--acc-dim);font-weight:600;}
+.custom-dates{display:grid;grid-template-columns:175px 175px;gap:10px;}
 input[type="date"],.inv-input,.sel-input{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--body-txt);
   font-family:'IBM Plex Mono',monospace;font-size:18px;padding:8px 10px;border-radius:5px;outline:none;
   transition:border-color .2s;color-scheme:dark;}
@@ -261,6 +278,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   .subtitle{font-size:13px;}
   .ticker-row{grid-template-columns:repeat(3,1fr);}
   .ctrl-row{grid-template-columns:1fr 1fr;}
+  .custom-dates{grid-template-columns:1fr 1fr;}
   .cards{grid-template-columns:repeat(2,1fr);}
   .chart-wrap{height:340px;}
   .zoom-hint-txt{display:none;}
@@ -273,15 +291,21 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   .header{gap:8px;margin-bottom:12px;}
   .ticker-row{grid-template-columns:repeat(2,1fr);}
   .ctrl-row{grid-template-columns:1fr;}
+  .custom-dates{grid-template-columns:1fr 1fr;}
+  .preset-btn{font-size:13px;padding:6px 9px;letter-spacing:0;}
   .cards{grid-template-columns:1fr;}
-  .chart-wrap{height:260px;}
+  .chart-wrap{height:280px;}
   .tgl{font-size:12px;padding:5px 8px;letter-spacing:.3px;}
+  .tgl-row{gap:4px;}
+  .zoom-btn{display:none;}
   .run-btn,.clear-btn{font-size:15px;padding:8px 12px;}
   .card-final{font-size:24px;}
   input[type="date"],.inv-input,.sel-input{font-size:16px;}
   .ticker-input{font-size:18px;}
   .ev-table{font-size:13.5px;}
   .ev-table th,.ev-table td{padding:4px 6px;}
+  .indices-bar{gap:8px;padding:8px 10px;}
+  .idx-check{font-size:13.5px;}
 }
 </style>
 </head>
@@ -313,9 +337,33 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <div class="sec-label" style="margin-bottom:10px;">Tickers (up to 5) — click the dot to change colour</div>
 <div class="ticker-row" id="tickerRow"></div>
 
+<div class="date-range-section">
+  <div class="date-range-hdr">
+    <div class="sec-label" style="margin-bottom:0">Date range</div>
+    <div class="date-mode-toggle">
+      <button class="dmode-btn on" id="dmode-preset" onclick="setDateMode('preset')">Presets</button>
+      <button class="dmode-btn" id="dmode-custom" onclick="setDateMode('custom')">Custom</button>
+    </div>
+  </div>
+  <div class="preset-row" id="presetRow">
+    <button class="preset-btn" data-preset="1D"  onclick="setPreset('1D')">1D</button>
+    <button class="preset-btn" data-preset="5D"  onclick="setPreset('5D')">5D</button>
+    <button class="preset-btn" data-preset="1M"  onclick="setPreset('1M')">1M</button>
+    <button class="preset-btn" data-preset="3M"  onclick="setPreset('3M')">3M</button>
+    <button class="preset-btn" data-preset="6M"  onclick="setPreset('6M')">6M</button>
+    <button class="preset-btn" data-preset="YTD" onclick="setPreset('YTD')">YTD</button>
+    <button class="preset-btn on" data-preset="1Y"  onclick="setPreset('1Y')">1Y</button>
+    <button class="preset-btn" data-preset="3Y"  onclick="setPreset('3Y')">3Y</button>
+    <button class="preset-btn" data-preset="5Y"  onclick="setPreset('5Y')">5Y</button>
+    <button class="preset-btn" data-preset="10Y" onclick="setPreset('10Y')">10Y</button>
+    <button class="preset-btn" data-preset="Max" onclick="setPreset('Max')">Max</button>
+  </div>
+  <div class="custom-dates" id="customDates" style="display:none">
+    <div><div class="sec-label">Start date</div><input type="date" id="startDate" onchange="saveSettings()"></div>
+    <div><div class="sec-label">End date</div><input type="date" id="endDate" onchange="saveSettings()"></div>
+  </div>
+</div>
 <div class="ctrl-row">
-  <div><div class="sec-label">Start date</div><input type="date" id="startDate" onchange="saveSettings()"></div>
-  <div><div class="sec-label">End date</div><input type="date" id="endDate" onchange="saveSettings()"></div>
   <div><div class="sec-label">Investment ($)</div><input class="inv-input" type="text" id="initInv" value="10,000" inputmode="numeric"></div>
   <div>
     <div class="sec-label">Tax on dividends</div>
@@ -458,6 +506,8 @@ let currentTheme = 'dark'; // 'dark' or 'light'
 let activeIndices = {}; // key -> processed reference-index data (S&P500, Nasdaq, etc.)
 let cropMode    = false;
 let chartLabels = []; // full sorted date array, kept in sync with the rendered chart
+let dateMode    = 'preset';  // 'preset' | 'custom'
+let activePreset = '1Y';
 
 // ── Theme (dark/light mode) ────────────────────────────────────────────────────
 const THEME_KEY = 'trc_theme_v1';
@@ -508,6 +558,8 @@ function saveSettings(){
       mode:      currentMode,
       showVlines:document.getElementById('showVlines')?.checked??true,
       activeIdxKeys:Object.keys(activeIndices),
+      dateMode,
+      activePreset,
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(cfg));
     // Flash the save indicator
@@ -552,6 +604,10 @@ function loadSettings(){
     if(Array.isArray(cfg.activeIdxKeys)) cfg.activeIdxKeys.forEach(k=>{
       const el=document.getElementById('idx-'+k); if(el) el.checked=true;
     });
+    // Restore date mode — call last so it can override startDate/endDate for presets
+    if(cfg.dateMode)    dateMode=cfg.dateMode;
+    if(cfg.activePreset) activePreset=cfg.activePreset;
+    setDateMode(dateMode);
   }catch(e){ console.warn('Could not load settings:', e); }
 }
 
@@ -564,10 +620,8 @@ function clearAll(){
   document.getElementById('evTableSection').style.display='none';
   setSt('Fields cleared. Enter tickers and click Run Analysis.','idle');
   // Reset form fields to defaults
-  const now=new Date(), end=now.toISOString().split('T')[0];
-  const s=new Date(now); s.setFullYear(s.getFullYear()-1);
-  document.getElementById('startDate').value=s.toISOString().split('T')[0];
-  document.getElementById('endDate').value=end;
+  dateMode='preset'; activePreset='1Y';
+  setDateMode('preset');
   document.getElementById('initInv').value='10,000';
   applyTaxUI('0.25');
   [0,1,2,3,4].forEach(i=>{ const el=document.getElementById('t'+i); if(el) el.value=i<3?['AAPL','MSFT','NVDA'][i]:''; });
@@ -587,13 +641,42 @@ function clearAll(){
   try{ localStorage.removeItem(STORE_KEY); }catch(e){}
 }
 
-// ── Dates ─────────────────────────────────────────────────────────────────────
-(()=>{
-  const now=new Date(), end=now.toISOString().split('T')[0];
-  const s=new Date(now); s.setFullYear(s.getFullYear()-1);
-  document.getElementById('endDate').value  =end;
-  document.getElementById('startDate').value=s.toISOString().split('T')[0];
-})();
+// ── Date range presets ────────────────────────────────────────────────────────
+function applyPreset(p){
+  const now=new Date(), d=new Date(now);
+  const today=now.toISOString().split('T')[0];
+  if     (p==='1D' ) d.setDate(d.getDate()-1);
+  else if(p==='5D' ) d.setDate(d.getDate()-5);
+  else if(p==='1M' ) d.setMonth(d.getMonth()-1);
+  else if(p==='3M' ) d.setMonth(d.getMonth()-3);
+  else if(p==='6M' ) d.setMonth(d.getMonth()-6);
+  else if(p==='YTD') { d.setMonth(0); d.setDate(1); }
+  else if(p==='1Y' ) d.setFullYear(d.getFullYear()-1);
+  else if(p==='3Y' ) d.setFullYear(d.getFullYear()-3);
+  else if(p==='5Y' ) d.setFullYear(d.getFullYear()-5);
+  else if(p==='10Y') d.setFullYear(d.getFullYear()-10);
+  else if(p==='Max') { d.setFullYear(1990); d.setMonth(0); d.setDate(1); }
+  else return;
+  document.getElementById('startDate').value=d.toISOString().split('T')[0];
+  document.getElementById('endDate').value=today;
+}
+
+function setPreset(p){
+  activePreset=p;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('on',b.dataset.preset===p));
+  applyPreset(p);
+  saveSettings();
+}
+
+function setDateMode(mode){
+  dateMode=mode;
+  document.getElementById('dmode-preset').classList.toggle('on',mode==='preset');
+  document.getElementById('dmode-custom').classList.toggle('on',mode==='custom');
+  document.getElementById('presetRow').style.display   =mode==='preset'?'':'none';
+  document.getElementById('customDates').style.display =mode==='custom'?'':'none';
+  if(mode==='preset') applyPreset(activePreset);
+  saveSettings();
+}
 
 // ── Tax rate ──────────────────────────────────────────────────────────────────
 const TAX_LABELS={'0':'Tax-free (TFSA/RRSP)','0.15':'15% preferential','0.25':'25% mid bracket','0.4':'40% high bracket'};
@@ -669,9 +752,10 @@ function buildTickers(){
     el.addEventListener('input',()=>{ const p=el.selectionStart; el.value=el.value.toUpperCase(); el.setSelectionRange(p,p); saveSettings(); });
   }
 }
-loadTheme(); // apply saved theme immediately, before building UI
+loadTheme();      // apply saved theme before building UI
 buildTickers();
-loadSettings(); // restore saved settings on page load
+setDateMode('preset'); // set default preset UI before loadSettings may override it
+loadSettings();   // restore saved settings (overrides defaults if present)
 
 document.addEventListener('click',e=>{
   if(openPicker===null) return;
