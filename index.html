@@ -292,6 +292,9 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 .holding-pct{font-size:13.5px;color:var(--txt-lo);letter-spacing:.5px;text-align:right;min-width:55px;}
 .holding-pct.hi{color:var(--body-txt);}
 .etf-note{font-size:13.5px;color:var(--txt-lo);letter-spacing:.5px;margin-top:8px;line-height:1.6;}
+.holdings-pct-note{font-size:13px;letter-spacing:.4px;padding:6px 10px;border-radius:4px;
+  background:rgba(240,192,64,.1);color:#f0c040;border:1px solid rgba(240,192,64,.25);
+  margin-bottom:8px;line-height:1.5;}
 .price-only-badge{display:inline-block;font-size:11px;letter-spacing:1px;padding:1px 6px;
   border-radius:3px;background:rgba(240,192,64,.12);color:#f0c040;
   border:1px solid rgba(240,192,64,.3);vertical-align:middle;margin-left:6px;text-transform:uppercase;}
@@ -1584,6 +1587,20 @@ function renderHoldingsList(sym){
     allBody.appendChild(row);
   });
   document.getElementById('allHoldingsCount').textContent=`${all.length} total`;
+
+  // Percentage sanity check
+  const pctSum = all.reduce((s,h)=>s+h.percent,0)*100;
+  const existingNote = document.getElementById('holdingsPctNote');
+  if(existingNote) existingNote.remove();
+  if(pctSum < 95 || pctSum > 105){
+    const note = document.createElement('div');
+    note.id = 'holdingsPctNote';
+    note.className = 'holdings-pct-note';
+    note.textContent = pctSum > 105
+      ? `⚠ Holdings sum to ${pctSum.toFixed(0)}% — may reflect notional or leveraged exposure, not portfolio weight`
+      : `⚠ Holdings sum to ${pctSum.toFixed(0)}% — data provider returns top holdings only, remainder not shown`;
+    document.getElementById('holdingsPanel').insertBefore(note, document.getElementById('holdingsPanel').firstChild.nextSibling);
+  }
 }
 
 function toggleHoldings(id){
