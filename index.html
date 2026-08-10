@@ -268,6 +268,58 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 .idx-check span{opacity:.8;transition:opacity .15s;}
 .note{font-size:13.5px;color:var(--border);text-align:center;letter-spacing:1.5px;text-transform:uppercase;line-height:1.8;}
 
+/* ── App mode tabs ─────────────────────────────────────────────────────────── */
+.app-mode-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);}
+.app-mode-tab{background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;
+  color:var(--txt-md);font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:1.5px;
+  padding:8px 20px;cursor:pointer;transition:all .15s;text-transform:uppercase;}
+.app-mode-tab:hover{color:var(--body-txt);}
+.app-mode-tab.on{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* ── ETF Holdings panel ─────────────────────────────────────────────────────── */
+.etf-input-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;}
+.etf-ticker-inp{background:var(--bg-input);border:1px solid var(--border);color:var(--txt-hi);
+  font-family:'IBM Plex Mono',monospace;font-size:22.5px;font-weight:600;letter-spacing:2px;
+  padding:10px 14px;border-radius:5px;text-transform:uppercase;outline:none;
+  transition:border-color .2s;width:160px;}
+.etf-ticker-inp:focus{border-color:var(--accent);}
+.etf-ticker-inp::placeholder{color:var(--txt-lo);font-weight:400;font-size:18px;letter-spacing:1px;}
+.load-btn{background:#0f2e2c;border:1px solid var(--accent);color:var(--accent);
+  font-family:'IBM Plex Mono',monospace;font-size:16.5px;font-weight:600;letter-spacing:1.5px;
+  padding:9px 20px;border-radius:5px;cursor:pointer;text-transform:uppercase;
+  transition:all .15s;white-space:nowrap;}
+.load-btn:hover{background:var(--accent);color:var(--bg-base);}
+.load-btn:disabled{opacity:.4;cursor:not-allowed;}
+.etf-info-bar{background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;
+  padding:10px 14px;margin-bottom:12px;font-size:15px;color:var(--txt-md);letter-spacing:.5px;}
+.etf-info-name{font-size:18px;font-weight:600;color:var(--txt-hi);margin-bottom:3px;letter-spacing:1px;}
+.holdings-section{margin-bottom:8px;}
+.holdings-hdr{display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 12px;
+  background:var(--bg-panel);border:1px solid var(--border-sub);border-radius:6px;
+  user-select:none;transition:border-color .15s;}
+.holdings-hdr:hover{border-color:var(--border);}
+.holdings-hdr.open{border-radius:6px 6px 0 0;}
+.hdr-title{font-size:13.5px;color:var(--txt-md);letter-spacing:2px;text-transform:uppercase;flex:1;}
+.hdr-count{font-size:13.5px;color:var(--txt-lo);}
+.hdr-arrow{font-size:15px;color:var(--txt-lo);transition:transform .2s;}
+.holdings-hdr.open .hdr-arrow{transform:rotate(180deg);}
+.holdings-body{display:none;border:1px solid var(--border-sub);border-top:none;
+  border-radius:0 0 6px 6px;overflow:hidden;}
+.holdings-body.open{display:block;}
+.holding-row{display:flex;align-items:center;gap:10px;padding:9px 12px;
+  border-bottom:1px solid var(--border-sub);transition:background .1s;}
+.holding-row:last-child{border-bottom:none;}
+.holding-row:hover{background:var(--bg-input);}
+.holding-chk{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.holding-sym{font-size:16.5px;font-weight:600;letter-spacing:1px;color:var(--txt-hi);min-width:75px;}
+.holding-name{font-size:14px;color:var(--txt-md);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.holding-pct{font-size:13.5px;color:var(--txt-lo);letter-spacing:.5px;text-align:right;min-width:55px;}
+.holding-pct.hi{color:var(--body-txt);}
+.etf-note{font-size:13.5px;color:var(--txt-lo);letter-spacing:.5px;margin-top:8px;line-height:1.6;}
+.price-only-badge{display:inline-block;font-size:11px;letter-spacing:1px;padding:1px 6px;
+  border-radius:3px;background:rgba(240,192,64,.12);color:#f0c040;
+  border:1px solid rgba(240,192,64,.3);vertical-align:middle;margin-left:6px;text-transform:uppercase;}
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width:1100px){
   .cards{grid-template-columns:repeat(3,1fr);}
@@ -334,8 +386,47 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <em>If the problem persists, the Cloudflare Worker may need to be redeployed.</em>
 </div>
 
-<div class="sec-label" style="margin-bottom:10px;">Tickers (up to 5) — click the dot to change colour</div>
-<div class="ticker-row" id="tickerRow"></div>
+<!-- Mode tabs -->
+<div class="app-mode-tabs">
+  <button class="app-mode-tab on" id="tab-manual" onclick="setAppMode('manual')">▦ Manual Tickers</button>
+  <button class="app-mode-tab" id="tab-etf" onclick="setAppMode('etf')">⊞ ETF Holdings</button>
+</div>
+
+<!-- Manual ticker section -->
+<div id="manualTickerSection">
+  <div class="sec-label" style="margin-bottom:10px;">Tickers (up to 5) — click the dot to change colour</div>
+  <div class="ticker-row" id="tickerRow"></div>
+</div>
+
+<!-- ETF Holdings section -->
+<div id="etfPanel" style="display:none">
+  <div class="sec-label" style="margin-bottom:10px;">ETF / Index Ticker</div>
+  <div class="etf-input-row">
+    <input class="etf-ticker-inp" id="etfTicker" placeholder="QQQ" maxlength="10"
+      oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')loadHoldings()">
+    <button class="load-btn" id="loadHoldingsBtn" onclick="loadHoldings()">Load Holdings</button>
+  </div>
+  <div id="holdingsPanel" style="display:none">
+    <div class="etf-info-bar" id="etfInfoBar"></div>
+    <div class="holdings-section">
+      <div class="holdings-hdr open" id="top10Hdr" onclick="toggleHoldings('top10')">
+        <span class="hdr-title">Top Holdings</span>
+        <span class="hdr-count" id="top10Count"></span>
+        <span class="hdr-arrow">▼</span>
+      </div>
+      <div class="holdings-body open" id="top10Body"></div>
+    </div>
+    <div class="holdings-section">
+      <div class="holdings-hdr" id="allHoldingsHdr" onclick="toggleHoldings('allHoldings')">
+        <span class="hdr-title">All Available Holdings</span>
+        <span class="hdr-count" id="allHoldingsCount"></span>
+        <span class="hdr-arrow">▼</span>
+      </div>
+      <div class="holdings-body" id="allHoldingsBody"></div>
+    </div>
+    <div class="etf-note">Check holdings above · Click <strong>▶ Run Analysis</strong> to chart the ETF + selected holdings &nbsp;·&nbsp; <span class="price-only-badge">Price Return only</span></div>
+  </div>
+</div>
 
 <div class="date-range-section">
   <div class="sec-label" style="margin-bottom:8px">Date range</div>
@@ -482,7 +573,8 @@ const PALETTE = [
   '#2b79ee','#7d98e8', '#2b3eee','#827de8', '#522bee','#a27de8', '#8c2bee','#c37de8',
   '#c72bee','#e37de8', '#ee2bda','#e87dcd', '#ee2ba0','#e87dad', '#ee2b65','#e87d8d',
 ];
-const YAHOO_BASE = 'https://late-salad-e369.821mark.workers.dev/v8/finance/chart';
+const YAHOO_BASE         = 'https://late-salad-e369.821mark.workers.dev/v8/finance/chart';
+const YAHOO_SUMMARY_BASE = 'https://late-salad-e369.821mark.workers.dev/v10/finance/quoteSummary';
 const YAHOO_HDR  = {'User-Agent':'Mozilla/5.0','Accept':'application/json'};
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -501,6 +593,10 @@ let activeIndices = {}; // key -> processed reference-index data (S&P500, Nasdaq
 let cropMode    = false;
 let chartLabels = []; // full sorted date array, kept in sync with the rendered chart
 let activePreset = '1Y';
+// ETF Holdings mode state
+let appMode      = 'manual'; // 'manual' | 'etf'
+let etfHoldings  = [];       // [{symbol, name, percent, checked}]
+let etfTickerSym = '';
 
 // ── Theme (dark/light mode) ────────────────────────────────────────────────────
 const THEME_KEY = 'trc_theme_v1';
@@ -607,7 +703,12 @@ function clearAll(){
   allData=[]; allEvents=[]; stockNames={}; visible=[true,true,true,true,true];
   if(chartInst){ chartInst.destroy(); chartInst=null; }
   document.getElementById('chartEmpty').style.display='flex';
-  for(let i=0;i<5;i++){ document.getElementById('card'+i).className='card'; document.getElementById('leg'+i).classList.remove('vis'); }
+  for(let i=0;i<5;i++){
+    const card=document.getElementById('card'+i); if(card) card.className='card';
+    const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis');
+  }
+  // Remove dynamically-created legend items (from ETF mode)
+  document.getElementById('legend').querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
   document.getElementById('evTableSection').style.display='none';
   setSt('Fields cleared. Enter tickers and click Run Analysis.','idle');
   // Reset form fields to defaults
@@ -784,7 +885,8 @@ function setMode(m){
 function toggleSeries(i){
   if(!allData[i]) return;
   visible[i]=!visible[i];
-  document.getElementById('leg'+i).classList.toggle('muted',!visible[i]);
+  const leg=document.getElementById('leg'+i);
+  if(leg) leg.classList.toggle('muted',!visible[i]);
   if(chartInst){ chartInst.getDatasetMeta(i).hidden=!visible[i]; chartInst.update(); }
   renderCards();       // sync card show/hide
   renderEventTable();  // sync event log
@@ -1036,10 +1138,11 @@ function getVal(p,baseInv){
 function renderCards(){
   allData.forEach((d,i)=>{
     const card=document.getElementById('card'+i);
+    if(!card) return; // ETF mode: series beyond slot 4 have no card element
     // Hide card if ticker series is hidden via legend click
     if(!visible[i]){ card.className='card'; return; }
     card.className='card vis';
-    const c=colours[i], pn=n=>n>=0?'p':'n';
+    const c=colours[i]||PALETTE[i%PALETTE.length], pn=n=>n>=0?'p':'n';
     const cagrStr=d.cagr!=null?fmtPct(d.cagr)+' / yr CAGR':'—';
     const divEvs=d.rawEvents.filter(e=>e.type==='div').sort((a,b)=>a.date.localeCompare(b.date));
     const splitEvs=d.rawEvents.filter(e=>e.type==='split').sort((a,b)=>a.date.localeCompare(b.date));
@@ -1047,14 +1150,16 @@ function renderCards(){
     const splitTipHtml=splitEvs.length?splitEvs.map(e=>`${e.date}: ${e.ratio}`).join('<br>'):'No splits in range';
     const yahooUrl=`https://finance.yahoo.com/quote/${encodeURIComponent(d.sym)}`;
     const fullName=stockNames[d.sym]||'';
-    // #2: divergence from adjClose benchmark
-    const divRow=d.divergePct!=null
+    // #2: divergence from adjClose benchmark (hidden in price-only ETF mode)
+    const divRow=(!d.priceOnly&&d.divergePct!=null)
       ?`<div class="card-row" title="DRIP simulation vs Yahoo adjClose ratio method"><span>vs adj-close Δ</span><span class="card-val" style="color:${Math.abs(d.divergePct)<2?'var(--pos)':'#f0c040'}">${d.divergePct>=0?'+':''}${d.divergePct.toFixed(2)}%</span></div>`
       :'';
-    // #1: tax row
-    const taxRow=`<div class="card-row"><span>Tax rate</span><span class="card-val">${(d.taxRate*100).toFixed(0)}%</span></div>`;
+    // #1: tax row (hidden in price-only ETF mode)
+    const taxRow=d.priceOnly?'': `<div class="card-row"><span>Tax rate</span><span class="card-val">${(d.taxRate*100).toFixed(0)}%</span></div>`;
     // #5 / #7: currency badge
     const ccyBadge=`<span class="card-ccy">${d.currency}</span>`;
+    // Price-only mode badge
+    const priceOnlyBadge=d.priceOnly?`<span class="price-only-badge">Price Return</span>`:'';
     // Split-direction auto-correction warning (e.g. YieldMax reverse splits)
     const splitWarnHtml = (d.splitWarnings&&d.splitWarnings.length)
       ? `<div class="split-warn" title="Yahoo's split data for this ticker appeared inverted (common with reverse splits) and was auto-corrected based on the actual price movement on the split date.">
@@ -1065,14 +1170,14 @@ function renderCards(){
     card.innerHTML=`
       <div class="card-tkr${fullName?'':' no-name'}" style="color:${c}">
         <a class="card-tkr-link" href="${yahooUrl}" target="_blank" rel="noopener"
-           title="${fullName?fullName+' — Yahoo Finance':'Open Yahoo Finance'}" style="color:${c}">${d.sym}</a>${ccyBadge}
+           title="${fullName?fullName+' — Yahoo Finance':'Open Yahoo Finance'}" style="color:${c}">${d.sym}</a>${ccyBadge}${priceOnlyBadge}
       </div>
       ${fullName?`<div class="card-name">${fullName}</div>`:''}
       ${splitWarnHtml}
       <div class="card-row"><span>Price return</span><span class="card-val ${pn(d.pricePct)}">${fmtPct(d.pricePct)}</span></div>
-      <div class="card-row"><span>Div contribution</span><span class="card-val p">${fmt$(Math.abs(d.divDollar))}</span></div>
-      <div class="card-row"><span>Total Return %</span><span class="card-val ${pn(d.totalPct)}">${fmtPct(d.totalPct)}</span></div>
-      <div class="card-row"><span>Total Return $</span><span class="card-val ${pn(d.totalPct)}">${fmt$(d.last.total)}</span></div>
+      ${d.priceOnly?'':`<div class="card-row"><span>Div contribution</span><span class="card-val p">${fmt$(Math.abs(d.divDollar))}</span></div>`}
+      ${d.priceOnly?'':`<div class="card-row"><span>Total Return %</span><span class="card-val ${pn(d.totalPct)}">${fmtPct(d.totalPct)}</span></div>`}
+      <div class="card-row"><span>${d.priceOnly?'Price Return $':'Total Return $'}</span><span class="card-val ${pn(d.totalPct)}">${fmt$(d.last.total)}</span></div>
       ${taxRow}
       ${divRow}
       <div class="card-row">
@@ -1087,7 +1192,9 @@ function renderCards(){
       <div class="card-final" style="color:${c}">${fmt$(d.last.total)}</div>
       <div class="card-sub" style="color:${c}">${cagrStr}</div>`;
   });
-  for(let i=allData.length;i<5;i++) document.getElementById('card'+i).className='card';
+  for(let i=allData.length;i<5;i++){
+    const card=document.getElementById('card'+i); if(card) card.className='card';
+  }
 }
 
 // ── #4 Event log table ────────────────────────────────────────────────────────
@@ -1225,16 +1332,20 @@ function renderChartWithIndices(){
 
   // Rebuild allEvents from allData only (not indices — they have no events)
   allEvents=[];
-  allData.forEach((d,i)=>d.rawEvents.forEach(ev=>allEvents.push({...ev,colour:colours[i]})));
+  allData.forEach((d,i)=>{
+    const col=colours[i]||PALETTE[i%PALETTE.length];
+    d.rawEvents.forEach(ev=>allEvents.push({...ev,colour:col}));
+  });
 
   // Ticker datasets (using allData + visible[])
   const tickerDatasets = allData.map((d,i)=>{
+    const col=colours[i]||PALETTE[i%PALETTE.length];
     const map={}; d.series.forEach(p=>{map[p.date]=p;});
     let last=null;
     const vals=labels.map(l=>{ if(map[l]) last=map[l]; return last?getVal(last,d.inv):null; });
     return{
       label:d.sym, data:vals,
-      borderColor:colours[i], backgroundColor:colours[i]+'14',
+      borderColor:col, backgroundColor:col+'14',
       borderWidth:2, pointRadius:0, pointHoverRadius:5,
       tension:.12, fill:currentView==='divcontrib', spanGaps:true,
       hidden: !visible[i],
@@ -1385,11 +1496,24 @@ function renderChartWithIndices(){
   });
 
   // Legend — tickers only (indices shown inline in chart with dashed lines)
+  const legendEl=document.getElementById('legend');
+  // Remove previously created dynamic items before rebuilding
+  legendEl.querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
   allData.forEach((d,i)=>{
-    const leg=document.getElementById('leg'+i);
-    if(!leg) return;
+    const col=colours[i]||PALETTE[i%PALETTE.length];
+    let leg=document.getElementById('leg'+i);
+    if(!leg){
+      // Series slot ≥5: create a dynamic legend pill
+      leg=document.createElement('div');
+      leg.className='leg-item dyn-leg-item';
+      leg.id='leg'+i;
+      leg.innerHTML=`<div class="leg-dot" id="leg${i}-dot"></div><span id="leg${i}-lbl"></span><div class="leg-tip" id="leg${i}-tip"></div>`;
+      leg.onclick=()=>toggleSeries(i);
+      const firstIdx=legendEl.querySelector('.idx-leg-item');
+      if(firstIdx) legendEl.insertBefore(leg,firstIdx); else legendEl.appendChild(leg);
+    }
     leg.classList.add('vis'); leg.classList.toggle('muted',!visible[i]);
-    document.getElementById('leg'+i+'-dot').style.background=colours[i];
+    document.getElementById('leg'+i+'-dot').style.background=col;
     document.getElementById('leg'+i+'-lbl').textContent=d.sym;
     const tip=document.getElementById('leg'+i+'-tip');
     if(tip) tip.textContent=stockNames[d.sym]||d.sym;
@@ -1401,7 +1525,6 @@ function renderChartWithIndices(){
   }
 
   // Index legend pills — append after ticker legend items
-  const legendEl=document.getElementById('legend');
   legendEl.querySelectorAll('.idx-leg-item').forEach(el=>el.remove()); // clear old
   idxData.forEach(d=>{
     const cfg=INDEX_CONFIG[d.indexKey];
@@ -1415,8 +1538,189 @@ function renderChartWithIndices(){
   });
 }
 
+// ── ETF Holdings mode ─────────────────────────────────────────────────────────
+function setAppMode(mode){
+  appMode=mode;
+  document.getElementById('tab-manual').classList.toggle('on',mode==='manual');
+  document.getElementById('tab-etf').classList.toggle('on',mode==='etf');
+  document.getElementById('manualTickerSection').style.display=mode==='manual'?'':'none';
+  document.getElementById('etfPanel').style.display=mode==='etf'?'':'none';
+  // Clear chart, cards, and legend
+  allData=[]; allEvents=[]; stockNames={};
+  visible=[true,true,true,true,true];
+  if(chartInst){ chartInst.destroy(); chartInst=null; }
+  document.getElementById('chartEmpty').style.display='flex';
+  for(let i=0;i<5;i++){
+    const card=document.getElementById('card'+i); if(card) card.className='card';
+    const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis');
+  }
+  document.getElementById('legend').querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
+  document.getElementById('evTableSection').style.display='none';
+  setSt(mode==='etf'
+    ?'Enter an ETF ticker and click Load Holdings.'
+    :'Enter tickers and click Run Analysis.','idle');
+}
+
+async function loadHoldings(){
+  const sym=document.getElementById('etfTicker').value.trim().toUpperCase();
+  if(!sym){ setSt('Enter an ETF ticker symbol.','error'); return; }
+  etfTickerSym=sym;
+  const btn=document.getElementById('loadHoldingsBtn');
+  btn.disabled=true;
+  setSt(`Loading holdings for ${sym}...`,'loading');
+  try{
+    const url=`${YAHOO_SUMMARY_BASE}/${encodeURIComponent(sym)}?modules=topHoldings`;
+    let resp;
+    try{ resp=await fetch(url,{headers:YAHOO_HDR}); }
+    catch(e){ throw new Error('Network error — '+e.message); }
+    if(resp.status===404) throw new Error(`Symbol not found: ${sym}`);
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json=await resp.json();
+    if(json?.quoteSummary?.error) throw new Error(json.quoteSummary.error.description||'Yahoo error');
+    const result=json?.quoteSummary?.result?.[0];
+    const holdings=result?.topHoldings?.holdings||[];
+    if(!holdings.length){
+      throw new Error(`${sym} has no holdings data — it may not be an ETF or fund.`);
+    }
+    etfHoldings=holdings
+      .filter(h=>h.symbol)
+      .map((h,i)=>({
+        symbol: h.symbol,
+        name:   h.holdingName||h.symbol,
+        percent:h.holdingPercent||0,
+        checked:i<5,
+      }));
+    if(!etfHoldings.length) throw new Error('Holdings found but none have ticker symbols.');
+    renderHoldingsList(sym);
+    document.getElementById('holdingsPanel').style.display='';
+    const n=etfHoldings.length;
+    setSt(`✓ ${n} holding${n!==1?'s':''} loaded for ${sym} — select holdings then click ▶ Run Analysis.`,'ok');
+  }catch(e){
+    setSt(`✗ ${e.message}`,'error');
+    document.getElementById('holdingsPanel').style.display='none';
+  }
+  btn.disabled=false;
+}
+
+function renderHoldingsList(sym){
+  const top10=etfHoldings.slice(0,10);
+  const all=etfHoldings;
+  document.getElementById('etfInfoBar').innerHTML=`
+    <div class="etf-info-name">${sym}</div>
+    <div>Holdings from Yahoo Finance &nbsp;·&nbsp; Select up to 10 to chart alongside ${sym} &nbsp;·&nbsp; <span class="price-only-badge">Price Return</span></div>`;
+  // Top 10 — checkboxes
+  const top10Body=document.getElementById('top10Body');
+  top10Body.innerHTML='';
+  top10.forEach((h,i)=>{
+    const pct=(h.percent*100).toFixed(2);
+    const row=document.createElement('div');
+    row.className='holding-row';
+    row.innerHTML=`
+      <input type="checkbox" class="holding-chk" id="hchk${i}" ${h.checked?'checked':''}
+        onchange="etfHoldings[${i}].checked=this.checked">
+      <label class="holding-sym" for="hchk${i}" style="cursor:pointer">${h.symbol}</label>
+      <span class="holding-name">${h.name}</span>
+      <span class="holding-pct${parseFloat(pct)>=5?' hi':''}">${pct}%</span>`;
+    top10Body.appendChild(row);
+  });
+  document.getElementById('top10Count').textContent=`${top10.length} holding${top10.length!==1?'s':''}`;
+  // All holdings — display only
+  const allBody=document.getElementById('allHoldingsBody');
+  allBody.innerHTML='';
+  all.forEach(h=>{
+    const pct=(h.percent*100).toFixed(2);
+    const row=document.createElement('div');
+    row.className='holding-row';
+    row.innerHTML=`
+      <span class="holding-sym">${h.symbol}</span>
+      <span class="holding-name">${h.name}</span>
+      <span class="holding-pct${parseFloat(pct)>=5?' hi':''}">${pct}%</span>`;
+    allBody.appendChild(row);
+  });
+  document.getElementById('allHoldingsCount').textContent=`${all.length} total`;
+}
+
+function toggleHoldings(id){
+  const hdr=document.getElementById(id+'Hdr');
+  const body=document.getElementById(id+'Body');
+  hdr.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+function processYahooPriceOnly(result,sym){
+  const inv=getInv();
+  const ts=result.timestamp||[], cl=result.indicators?.quote?.[0]?.close||[];
+  const ac=result.indicators?.adjclose?.[0]?.adjclose||[];
+  const pts=[];
+  for(let i=0;i<ts.length;i++){
+    if(cl[i]==null||cl[i]<=0) continue;
+    const adj=(ac[i]!=null&&ac[i]>0)?ac[i]:cl[i];
+    pts.push({date:new Date(ts[i]*1000).toISOString().split('T')[0],adjClose:adj});
+  }
+  if(pts.length<3) throw new Error('Not enough data points');
+  const base=pts[0].adjClose;
+  const series=pts.map(p=>({
+    date:p.date, raw:p.adjClose,
+    price:(p.adjClose/base)*inv,
+    total:(p.adjClose/base)*inv,
+    divContrib:0,
+  }));
+  const last=series[series.length-1];
+  return{
+    sym, series, inv,
+    divCount:0, splitCount:0, rawEvents:[], eventLog:[], splitWarnings:[],
+    totalPct:(last.total-inv)/inv*100,
+    pricePct:(last.total-inv)/inv*100,
+    divDollar:0, last,
+    startDate:series[0].date, endDate:last.date,
+    cagr:calcCAGR(inv,last.total,series[0].date,last.date),
+    taxRate:0, currency:ccyLabel(sym),
+    adjFinal:null, divergePct:null,
+    priceOnly:true,
+  };
+}
+
+async function runEtfAnalysis(){
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true;
+  allData=[]; allEvents=[]; stockNames={};
+  cropMode=false;
+  document.getElementById('tog-crop')?.classList.remove('on');
+  document.getElementById('recalc-btn').style.display='none';
+  document.getElementById('legend').querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
+  if(!etfTickerSym){ setSt('Load an ETF first, then click Run Analysis.','error'); btn.disabled=false; return; }
+  const checked=etfHoldings.slice(0,10).filter(h=>h.checked);
+  if(!checked.length){ setSt('Select at least one holding to chart.','error'); btn.disabled=false; return; }
+  const sd=document.getElementById('startDate').value, ed=document.getElementById('endDate').value;
+  if(!sd||!ed||sd>=ed){ setSt('Invalid date range.','error'); btn.disabled=false; return; }
+  const p1=toUnix(sd), p2=toUnix(ed)+86400;
+  const tickers=[etfTickerSym,...checked.map(h=>h.symbol)];
+  const errors=[];
+  for(let i=0;i<tickers.length;i++){
+    const sym=tickers[i];
+    try{
+      setSt(`Fetching ${sym}... (${i+1} of ${tickers.length})`,'loading');
+      if(i>0) await sleep(400);
+      const result=await fetchYahoo(sym,p1,p2);
+      const meta=result.meta||{};
+      stockNames[sym]=meta.longName||meta.shortName||sym;
+      allData.push(processYahooPriceOnly(result,sym));
+    }catch(e){ errors.push(`${sym}: ${e.message}`); }
+  }
+  btn.disabled=false;
+  if(!allData.length){ setSt('All fetches failed:\n'+errors.join('\n'),'error'); return; }
+  visible=allData.map(()=>true);
+  let statusMsg=`✓ ${etfTickerSym} + ${allData.length-1} holding${allData.length!==2?'s':''} — price return only`;
+  if(errors.length) statusMsg+='\n✗ Failed: '+errors.join(' | ');
+  setSt(statusMsg,errors.length?'loading':'ok');
+  renderChartWithIndices();
+  renderCards();
+  renderEventTable();
+}
+
 // ── Run ───────────────────────────────────────────────────────────────────────
 async function runAnalysis(){
+  if(appMode==='etf'){ await runEtfAnalysis(); return; }
   const btn=document.getElementById('runBtn'); btn.disabled=true;
   allData=[]; allEvents=[]; stockNames={}; visible=[true,true,true,true,true];
   cropMode=false;
