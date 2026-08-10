@@ -1587,7 +1587,7 @@ async function loadHoldings(){
       .map((h,i)=>({
         symbol: h.symbol,
         name:   h.holdingName||h.symbol,
-        percent:h.holdingPercent||0,
+        percent:(h.holdingPercent?.raw??h.holdingPercent)||0,
         checked:i<5,
       }));
     if(!etfHoldings.length) throw new Error('Holdings found but none have ticker symbols.');
