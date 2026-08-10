@@ -338,14 +338,8 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <div class="ticker-row" id="tickerRow"></div>
 
 <div class="date-range-section">
-  <div class="date-range-hdr">
-    <div class="sec-label" style="margin-bottom:0">Date range</div>
-    <div class="date-mode-toggle">
-      <button class="dmode-btn on" id="dmode-preset" onclick="setDateMode('preset')">Presets</button>
-      <button class="dmode-btn" id="dmode-custom" onclick="setDateMode('custom')">Custom</button>
-    </div>
-  </div>
-  <div class="preset-row" id="presetRow">
+  <div class="sec-label" style="margin-bottom:8px">Date range</div>
+  <div class="preset-row">
     <button class="preset-btn" data-preset="1D"  onclick="setPreset('1D')">1D</button>
     <button class="preset-btn" data-preset="5D"  onclick="setPreset('5D')">5D</button>
     <button class="preset-btn" data-preset="1M"  onclick="setPreset('1M')">1M</button>
@@ -358,9 +352,9 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
     <button class="preset-btn" data-preset="10Y" onclick="setPreset('10Y')">10Y</button>
     <button class="preset-btn" data-preset="Max" onclick="setPreset('Max')">Max</button>
   </div>
-  <div class="custom-dates" id="customDates" style="display:none">
-    <div><div class="sec-label">Start date</div><input type="date" id="startDate" onchange="saveSettings()"></div>
-    <div><div class="sec-label">End date</div><input type="date" id="endDate" onchange="saveSettings()"></div>
+  <div class="custom-dates" style="margin-top:10px">
+    <div><div class="sec-label">Start date</div><input type="date" id="startDate" onchange="clearPresetHighlight()"></div>
+    <div><div class="sec-label">End date</div><input type="date" id="endDate" onchange="clearPresetHighlight()"></div>
   </div>
 </div>
 <div class="ctrl-row">
@@ -506,7 +500,6 @@ let currentTheme = 'dark'; // 'dark' or 'light'
 let activeIndices = {}; // key -> processed reference-index data (S&P500, Nasdaq, etc.)
 let cropMode    = false;
 let chartLabels = []; // full sorted date array, kept in sync with the rendered chart
-let dateMode    = 'preset';  // 'preset' | 'custom'
 let activePreset = '1Y';
 
 // ── Theme (dark/light mode) ────────────────────────────────────────────────────
@@ -558,7 +551,6 @@ function saveSettings(){
       mode:      currentMode,
       showVlines:document.getElementById('showVlines')?.checked??true,
       activeIdxKeys:Object.keys(activeIndices),
-      dateMode,
       activePreset,
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(cfg));
@@ -604,10 +596,9 @@ function loadSettings(){
     if(Array.isArray(cfg.activeIdxKeys)) cfg.activeIdxKeys.forEach(k=>{
       const el=document.getElementById('idx-'+k); if(el) el.checked=true;
     });
-    // Restore date mode — call last so it can override startDate/endDate for presets
-    if(cfg.dateMode)    dateMode=cfg.dateMode;
-    if(cfg.activePreset) activePreset=cfg.activePreset;
-    setDateMode(dateMode);
+    // Restore active preset — recalculates dates from today; clears highlight if user had custom dates
+    if(cfg.activePreset) setPreset(cfg.activePreset);
+    else clearPresetHighlight();
   }catch(e){ console.warn('Could not load settings:', e); }
 }
 
@@ -620,8 +611,7 @@ function clearAll(){
   document.getElementById('evTableSection').style.display='none';
   setSt('Fields cleared. Enter tickers and click Run Analysis.','idle');
   // Reset form fields to defaults
-  dateMode='preset'; activePreset='1Y';
-  setDateMode('preset');
+  setPreset('1Y');
   document.getElementById('initInv').value='10,000';
   applyTaxUI('0.25');
   [0,1,2,3,4].forEach(i=>{ const el=document.getElementById('t'+i); if(el) el.value=i<3?['AAPL','MSFT','NVDA'][i]:''; });
@@ -668,13 +658,9 @@ function setPreset(p){
   saveSettings();
 }
 
-function setDateMode(mode){
-  dateMode=mode;
-  document.getElementById('dmode-preset').classList.toggle('on',mode==='preset');
-  document.getElementById('dmode-custom').classList.toggle('on',mode==='custom');
-  document.getElementById('presetRow').style.display   =mode==='preset'?'':'none';
-  document.getElementById('customDates').style.display =mode==='custom'?'':'none';
-  if(mode==='preset') applyPreset(activePreset);
+function clearPresetHighlight(){
+  activePreset='';
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('on'));
   saveSettings();
 }
 
@@ -754,7 +740,7 @@ function buildTickers(){
 }
 loadTheme();      // apply saved theme before building UI
 buildTickers();
-setDateMode('preset'); // set default preset UI before loadSettings may override it
+setPreset('1Y'); // set default dates before loadSettings may override
 loadSettings();   // restore saved settings (overrides defaults if present)
 
 document.addEventListener('click',e=>{
