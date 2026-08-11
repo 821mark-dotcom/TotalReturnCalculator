@@ -1533,7 +1533,7 @@ function renderChartWithIndices(){
   allEvents=[];
   allData.forEach((d,i)=>{
     const col=(d._isExtra?etfExtraColours[d._extraIdx]:null)||colours[i]||PALETTE[i%PALETTE.length];
-    d.rawEvents.forEach(ev=>allEvents.push({...ev,colour:col}));
+    d.rawEvents.forEach(ev=>allEvents.push({...ev,colour:col,datasetIdx:i}));
   });
 
   // Ticker datasets (using allData + visible[])
@@ -1580,6 +1580,7 @@ function renderChartWithIndices(){
       if(!showVl) return;
       const ctx=chart.ctx, xA=chart.scales.x, yA=chart.scales.y;
       allEvents.forEach(ev=>{
+        if(!visible[ev.datasetIdx]) return;
         const li=labels.indexOf(ev.date); if(li<0) return;
         const meta=chart.getDatasetMeta(0); if(!meta||!meta.data[li]) return;
         const x=meta.data[li].x; if(x<xA.left||x>xA.right) return;
@@ -1636,7 +1637,7 @@ function renderChartWithIndices(){
             title:items=>{ const idx=items[0]?.dataIndex; return labels[idx]||''; },
             afterTitle:items=>{
               const idx=items[0]?.dataIndex, date=labels[idx]; if(!date) return '';
-              const evs=allEvents.filter(e=>e.date===date); if(!evs.length) return '';
+              const evs=allEvents.filter(e=>e.date===date&&visible[e.datasetIdx]); if(!evs.length) return '';
               return evs.map(e=>e.type==='div'
                 ?`  📅 ${e.sym} Div: ${fmtD$(e.amount,4)}/sh`
                 :`  🔀 ${e.sym} Split ${e.ratio}`).join('\n');
