@@ -510,7 +510,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
     <button class="mode-btn"    id="mode-pct"    onclick="setMode('pct')"    title="% gain / loss">%</button>
   </div>
   <label class="vlines-lbl" title="Mark dividends &amp; splits on the chart">
-    <input type="checkbox" id="showVlines" checked onchange="renderChartWithIndices();saveSettings()">
+    <input type="checkbox" id="showVlines" onchange="renderChartWithIndices();saveSettings()">
     Div/Split Lines
   </label>
   <div class="zoom-ctrls">
@@ -668,7 +668,7 @@ function saveSettings(){
       colours:   [...colours],
       view:      currentView,
       mode:      currentMode,
-      showVlines:document.getElementById('showVlines')?.checked??true,
+      showVlines:document.getElementById('showVlines')?.checked??false,
       activeIdxKeys:Object.keys(activeIndices),
       activePreset,
       etfExtraColours:[...etfExtraColours],
