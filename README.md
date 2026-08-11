@@ -13,7 +13,7 @@ Interactive overlay chart, dollar/% toggle, customizable colours, date range pre
 ### Manual Tickers mode
 - Compare up to 5 tickers (US and TSX, e.g. `AAPL`, `RY.TO`)
 - True DRIP simulation: dividends reinvested at ex-date close, splits applied correctly
-- After-tax dividend reinvestment (0% / 15% / 25% / 40% / custom tax rate)
+- After-tax dividend reinvestment — defaults to 0% (tax-free); options: 0% / 15% / 25% / 40% / custom
 - Cross-check against Yahoo's adjClose ratio method, with divergence warnings
 - Split-direction sanity check — auto-corrects inverted Yahoo data for reverse splits
 - Full dividend & split event log (collapsible table)

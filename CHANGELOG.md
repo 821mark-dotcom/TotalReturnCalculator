@@ -4,6 +4,13 @@ All notable changes to the Total Return Calculator are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Default tax rate changed from 25% to 0%.** New sessions and Clear-resets now start with tax-free dividend reinvestment. Users can still select 15%, 25%, 40%, or a custom rate. Existing saved settings are unaffected.
+- **Tab bar improved.** Each mode tab now shows a two-line label — bold tab name and a short description ("Enter tickers to compare returns" / "Chart an ETF's top holdings") — making the two modes immediately legible without clicking. An inline info callout below the tabs explains what each mode does and how to use it.
+- **Y-axis values shortened.** Dollar amounts on the chart Y-axis now use compact notation: `$10,000` → `$10k`, `$150,000` → `$150k`, `$1,200,000` → `$1.2M`. Applies to all chart views (raw price and total return dollar mode).
+- **Y-axis percentage labels drop the decimal.** `+60.0%` now renders as `+60%`, reducing visual noise on the axis.
+- **X-axis tick density is now responsive.** Tick count is computed from the actual rendered chart width (`clientWidth ÷ 60px`), so narrow screens automatically show fewer labels instead of crowding them. Labels use a smarter format: the year is shown once when it first appears, subsequent months within that year show a three-letter abbreviation (e.g. `Mar`), eliminating repeated year values across the axis.
+
 ### Added
 - **ETF Holdings mode.** A new "ETF Holdings" tab lets you enter any ETF or index fund ticker, load its top holdings from Yahoo Finance, select up to 10 individual holdings via checkboxes, and chart them all together alongside the fund itself. All series use price return (adjClose-based) so holdings are apples-to-apples. Holdings percentage sanity check warns when data sums below 95% (provider returns top holdings only) or above 105% (notional/leveraged exposure). A direct link to the full Yahoo Finance holdings page is provided for each fund.
 - **"Compare Against" extra tickers in ETF Holdings mode.** Two optional ticker input slots with full colour pickers (same swatch popup as Manual mode) let you add any stocks alongside the ETF and its holdings — useful for benchmarking the fund against peers (e.g. QQQ vs VOO) or comparing held positions against unrelated tickers. Extra tickers use the same price-return methodology. Colours, symbols, and all ETF mode settings persist via `localStorage`. Summary cards (slots 5 and 6) always appear for extra tickers regardless of how many holdings are selected.
