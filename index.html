@@ -130,6 +130,8 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   border:1px solid var(--border-sub);margin-bottom:14px;min-height:40px;line-height:1.7;white-space:pre-wrap;}
 .status.idle{color:var(--txt-md);} .status.loading{color:#f0c040;border-color:#4a3a10;}
 .status.ok{color:var(--pos);border-color:#1a4a40;} .status.error{color:var(--neg);border-color:#4a2010;}
+#yahooLink{margin-left:10px;font-size:0.82em;color:inherit;opacity:0.7;white-space:nowrap;text-decoration:underline;}
+#yahooLink:hover{opacity:1;}
 
 /* Legend */
 .legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;min-height:24px;justify-content:center;}
@@ -523,7 +525,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <span class="zoom-hint-txt">Ctrl+Scroll to zoom · Drag to pan</span>
 </div>
 
-<div class="status idle" id="status">Enter tickers and click Run Analysis.</div>
+<div class="status idle" id="status"><span id="statusText">Enter tickers and click Run Analysis.</span><a id="yahooLink" href="#" target="_blank" rel="noopener" style="display:none"></a></div>
 
 <div class="legend" id="legend">
   <div class="leg-item" id="leg0" onclick="toggleSeries(0)"><div class="leg-dot" id="leg0-dot"></div><span id="leg0-lbl"></span><div class="leg-tip" id="leg0-tip"></div></div>
@@ -911,7 +913,78 @@ function applyColour(i,c){
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function setSt(msg,type='idle'){ const el=document.getElementById('status'); el.textContent=msg; el.className='status '+type; }
+function setSt(msg,type='idle'){
+  const el=document.getElementById('status');
+  document.getElementById('statusText').textContent=msg;
+  el.className='status '+type;
+  if(type!=='ok') document.getElementById('yahooLink').style.display='none';
+}
+function showYahooLink(tickers,sd,ed){
+  const link=document.getElementById('yahooLink');
+  if(!tickers.length||!sd||!ed){link.style.display='none';return;}
+  const days=Math.round((new Date(ed)-new Date(sd))/86400000);
+  const range=days<=1?'1d':days<=6?'5d':days<=35?'1mo':days<=100?'3mo':
+              days<=200?'6mo':days<=400?'1y':days<=800?'2y':days<=2000?'5y':
+              days<=4000?'10y':'max';
+  // Map range → ChartIQ setSpan + interval settings Yahoo Finance uses internally
+  const SP={
+    '1d': {m:1,b:'today',tu:'minute',iv:1},
+    '5d': {m:5,b:'day',  tu:'minute',iv:5},
+    '1mo':{m:1,b:'month',tu:null,    iv:1},
+    '3mo':{m:3,b:'month',tu:null,    iv:1},
+    '6mo':{m:6,b:'month',tu:null,    iv:1},
+    '1y': {m:1,b:'year', tu:null,    iv:1},
+    '2y': {m:2,b:'year', tu:'week',  iv:1},
+    '5y': {m:5,b:'year', tu:'week',  iv:1},
+    '10y':{m:10,b:'year',tu:'month', iv:1},
+    'max':{m:1,b:'all',  tu:'month', iv:1},
+  };
+  const s=SP[range];
+  const setSpan={multiplier:s.m,base:s.b,
+    periodicity:{interval:s.iv,period:1,timeUnit:s.tu},
+    showEventsQuote:true,forceLoad:true};
+  const COLORS=['#0081f2','#64acdb','#f5a623','#7ed321','#bd10e0','#e74c3c'];
+  const symbols=tickers.map((sym,i)=>{
+    const o={symbol:sym,symbolObject:{symbol:sym},periodicity:1,interval:s.iv,timeUnit:s.tu,setSpan};
+    if(i>0){
+      o.id=sym;
+      o.parameters={isComparison:true,color:COLORS[i%COLORS.length],
+        gapDisplayStyle:true,shareYAxis:true,chartName:'chart',
+        symbolObject:{symbol:sym},panel:'chart',fillGaps:false,
+        action:'add-series',symbol:sym,name:sym,overChart:true,
+        useChartLegend:true,heightPercentage:0.7,opacity:1,
+        highlightable:true,type:'line',style:'stx_line_chart',
+        seriesRenderer:true,highlight:false};
+    }
+    return o;
+  });
+  const state={
+    layout:{
+      interval:s.iv,periodicity:1,timeUnit:s.tu,
+      candleWidth:8.5,flipped:false,volumeUnderlay:true,
+      adj:true,crosshair:true,chartType:'mountain',
+      extended:false,marketSessions:{},aggregationType:'ohlc',
+      chartScale:'percent',studies:{},
+      panels:{chart:{percent:1,display:tickers[0],chartName:'chart',index:0,
+        yAxis:{name:'chart',position:null},yaxisLHS:[],yaxisRHS:['chart']}},
+      setSpan,outliers:false,animation:true,
+      headsUp:{static:true,dynamic:false,floating:false},
+      lineWidth:2,fullScreen:true,stripedBackground:true,
+      color:'#0081f2',crosshairSticky:false,dontSaveRangeToLayout:false,
+      symbols,renderers:[],range:null
+    },
+    events:{divs:true,splits:true,tradingHorizon:'none',sigDevEvents:[]},
+    drawings:null,preferences:{}
+  };
+  // Encode state as base64 hash — overrides any Yahoo Finance localStorage state
+  const hash=btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  const params=['range='+range];
+  if(tickers.length>1) params.push('compareTo='+tickers.slice(1).join(','));
+  link.href='https://finance.yahoo.com/chart/'+encodeURIComponent(tickers[0])+
+            '/?'+params.join('&')+'#'+hash;
+  link.textContent='↗ Yahoo Finance';
+  link.style.display='inline';
+}
 function setView(v){
   currentView=v;
   document.querySelectorAll('.tgl').forEach(b=>b.classList.remove('on'));
@@ -1848,6 +1921,7 @@ async function runEtfAnalysis(){
   statusMsg+=' — price return only';
   if(errors.length) statusMsg+='\n✗ Failed: '+errors.join(' | ');
   setSt(statusMsg,errors.length?'loading':'ok');
+  if(!errors.length) showYahooLink([etfTickerSym,...checked.map(h=>h.symbol),...extraSymbols],sd,ed);
   renderChartWithIndices();
   renderCards();
   renderEventTable();
@@ -1893,6 +1967,7 @@ async function runAnalysis(){
   if(splitWarns.length) statusMsg+='\n⚠ Auto-corrected inverted split data (likely reverse split): '+splitWarns.map(d=>d.sym).join(', ');
   if(errors.length) statusMsg+='\n✗ Failed: '+errors.join(' | ');
   setSt(statusMsg, errors.length?'loading':'ok');
+  if(!errors.length) showYahooLink(allData.map(d=>d.sym),sd,ed);
 
   renderChartWithIndices(); renderCards(); renderEventTable();
   saveSettings();
