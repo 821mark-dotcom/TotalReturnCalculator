@@ -359,6 +359,8 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   .title{font-size:26px;letter-spacing:2px;}
   .subtitle{font-size:12px;}
   .header{gap:8px;margin-bottom:12px;}
+  .btn-label{display:none;}
+  .howto-btn,.theme-toggle{padding:7px 10px;}
   .ticker-row{grid-template-columns:repeat(2,1fr);}
   .ctrl-row{grid-template-columns:1fr;}
   .custom-dates{grid-template-columns:1fr 1fr;}
@@ -384,8 +386,10 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <div class="header">
   <div class="title">Total Return Calculator</div>
   <div class="subtitle">Yahoo Finance · Price + Dividends + Splits · DRIP Reinvested</div>
-  <button class="howto-btn" onclick="openHowTo()" title="How to use this app"><span style="color:var(--accent)">?</span> HowTo</button>
-  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙 Dark</button>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <button class="howto-btn" onclick="openHowTo()" title="How to use this app"><span style="color:var(--accent)">?</span><span class="btn-label"> HowTo</span></button>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode"><span class="btn-icon">🌙</span><span class="btn-label"> Dark</span></button>
+  </div>
 </div>
 
 
@@ -630,7 +634,9 @@ function applyTheme(theme){
   currentTheme = theme;
   document.documentElement.setAttribute('data-theme', theme);
   const btn = document.getElementById('themeToggle');
-  if(btn) btn.textContent = theme==='dark' ? '🌙 Dark' : '☀️ Light';
+  if(btn) btn.innerHTML = theme==='dark'
+    ? '<span class="btn-icon">🌙</span><span class="btn-label"> Dark</span>'
+    : '<span class="btn-icon">☀️</span><span class="btn-label"> Light</span>';
   // Re-render chart so canvas-drawn colours (axes, gridlines, crosshair) pick up the new theme
   if(allData.length || Object.keys(activeIndices||{}).length) renderChartWithIndices();
 }

@@ -4,6 +4,10 @@ All notable changes to the Total Return Calculator are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **HowTo button.** A `? HowTo` button in the header (beside the Dark toggle) opens a modal with concise step-by-step instructions for both Manual Tickers and ETF Holdings modes, plus a chart options reference.
+- **Responsive header buttons.** On small screens (≤ 560 px, e.g. portrait iPhone) the `? HowTo` and `🌙 Dark` buttons collapse to icon-only (`?` and `🌙 / ☀️`), freeing header space without losing functionality.
+
 ### Changed
 - **Default tax rate changed from 25% to 0%.** New sessions and Clear-resets now start with tax-free dividend reinvestment. Users can still select 15%, 25%, 40%, or a custom rate. Existing saved settings are unaffected.
 - **Tab bar improved.** Each mode tab now shows a two-line label — bold tab name and a short description ("Enter tickers to compare returns" / "Chart an ETF's top holdings") — making the two modes immediately legible without clicking. An inline info callout below the tabs explains what each mode does and how to use it.

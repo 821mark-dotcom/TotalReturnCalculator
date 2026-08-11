@@ -37,6 +37,7 @@ Interactive overlay chart, dollar/% toggle, customizable colours, date range pre
 - Clickable ticker symbols linking to Yahoo Finance
 - Hover tooltips for dividend/split events on the chart
 - Dark / light mode toggle, saved independently
+- **HowTo** button opens a concise in-app guide (collapses to icon on small screens)
 - All settings persist via `localStorage`; Clear button resets everything
 
 ## Data Source
