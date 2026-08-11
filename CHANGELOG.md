@@ -4,6 +4,18 @@ All notable changes to the Total Return Calculator are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **ETF Holdings mode.** A new "ETF Holdings" tab lets you enter any ETF or index fund ticker, load its top holdings from Yahoo Finance, select up to 10 individual holdings via checkboxes, and chart them all together alongside the fund itself. All series use price return (adjClose-based) so holdings are apples-to-apples. Holdings percentage sanity check warns when data sums below 95% (provider returns top holdings only) or above 105% (notional/leveraged exposure). A direct link to the full Yahoo Finance holdings page is provided for each fund.
+- **"Compare Against" extra tickers in ETF Holdings mode.** Two optional ticker input slots with full colour pickers (same swatch popup as Manual mode) let you add any stocks alongside the ETF and its holdings — useful for benchmarking the fund against peers (e.g. QQQ vs VOO) or comparing held positions against unrelated tickers. Extra tickers use the same price-return methodology. Colours, symbols, and all ETF mode settings persist via `localStorage`. Summary cards (slots 5 and 6) always appear for extra tickers regardless of how many holdings are selected.
+- **Cloudflare Worker CORS proxy.** A deployed Cloudflare Worker at `late-salad-e369.821mark.workers.dev` proxies Yahoo Finance API requests, enabling the app to work on mobile and in any browser without a CORS-unblocking extension. The worker forwards both the v8 chart endpoint and the v10 quoteSummary endpoint.
+- **Crop mode.** A ✂ Crop toggle lets you drag on the chart to select a time window, then click ↩ Recalculate to re-run the analysis from that exact date range. In ETF mode, the crop reuses already-loaded data (no re-fetch) and preserves series visibility state.
+- **Date range presets.** Quick preset buttons (1D, 5D, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y, Max) for the date range, with the active preset highlighted and saved to `localStorage`.
+- **Reference index overlays.** Optional checkbox overlays for S&P 500, Nasdaq, TSX, VIX, and BTC (dashed lines on the chart, normalized to the same initial investment). Index legend pills in the chart legend are now clickable to deselect an overlay directly, in addition to the overlay checkboxes.
+
+### Fixed
+- **Index legend pills were not clickable.** Clicking an index name (e.g. "S&P 500") in the chart legend had no effect — the only way to remove an overlay was by unchecking the checkbox in the Reference Indices bar. Index pills now have an `onclick` handler that unchecks the checkbox and removes the overlay, matching the expected behaviour.
+- **Extra ticker colour mismatch.** The legend dot for "Compare Against" tickers showed a different colour than the chart line — the legend builder was using `colours[i] || PALETTE[i%PALETTE.length]` instead of reading from `etfExtraColours[]`. Both now use the same formula so dot, chart line, and summary card are all consistent.
+
 ### Changed
 - **Colour picker palette overhauled for better distinctness.** The previous 36-colour palette was built from groups of 3 near-identical shades per hue (e.g. three very similar reds in a row), making adjacent swatches hard to tell apart. Replaced with 40 colours built from 20 hues spaced evenly around the colour wheel (18° apart), each offered in a vivid tone and a lighter/pastel tone. Verified numerically: the worst-case distance between adjacent swatches in the old palette was as low as ~45 (RGB Euclidean distance); every adjacent pair in the new palette is 80+ apart, a near-doubling of perceptual separation. The picker popup was widened and the swatch grid changed from 8 to 10 columns to comfortably fit the larger set.
 

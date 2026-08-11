@@ -1,45 +1,55 @@
 # Total Return Calculator
 
-A browser-based, no-backend stock total return comparator. Compare up to 5 tickers
-side-by-side — price return, dividend/split contribution, and full DRIP-simulated
-total return — with an interactive overlay chart, dollar/% toggle, customizable
-colours, and optional reference index overlays (S&P 500, Nasdaq, TSX, VIX, BTC).
+A browser-based, no-backend stock total return comparator. Two modes:
+
+**Manual Tickers** — compare up to 5 tickers side-by-side with full DRIP simulation: price return, dividend/split contribution, and total return (dividends reinvested after tax).
+
+**ETF Holdings** — load any ETF or fund, pick holdings from its top-10 list, add up to 2 extra comparison tickers, and chart them all together as price return.
+
+Interactive overlay chart, dollar/% toggle, customizable colours, date range presets, crop mode, and optional reference index overlays (S&P 500, Nasdaq, TSX, VIX, BTC).
 
 ## Features
 
+### Manual Tickers mode
 - Compare up to 5 tickers (US and TSX, e.g. `AAPL`, `RY.TO`)
-- Custom start/end date range, adjustable initial investment
 - True DRIP simulation: dividends reinvested at ex-date close, splits applied correctly
 - After-tax dividend reinvestment (0% / 15% / 25% / 40% / custom tax rate)
 - Cross-check against Yahoo's adjClose ratio method, with divergence warnings
-- Chart views: raw price, price return, dividend+split contribution, total return
-- Dollar value or percentage return toggle
-- Custom colour picker per ticker (25-colour gradient palette + native picker)
+- Split-direction sanity check — auto-corrects inverted Yahoo data for reverse splits
+- Full dividend & split event log (collapsible table)
+
+### ETF Holdings mode
+- Enter any ETF ticker → loads top holdings from Yahoo Finance
+- Select up to 10 individual holdings to chart alongside the fund
+- Add up to 2 extra "Compare Against" tickers (e.g. a peer ETF) with colour pickers
+- All series use price return (adjClose-based) for apples-to-apples comparison
+- Holdings percentage warning when data is incomplete or reflects leveraged exposure
+- Link to full Yahoo Finance holdings page per fund
+
+### Chart & UI
+- Four chart views: raw price, price return, dividend+split contribution, total return
+- Dollar value ($) or percentage return (%) toggle
+- Custom colour picker per ticker — 40-colour gradient palette + native colour picker
+- Date range presets: 1D / 5D / 1M / 3M / 6M / YTD / 1Y / 3Y / 5Y / 10Y / Max
+- ✂ Crop mode: drag to select a time window on the chart, then recalculate from it
+- Crosshair, Ctrl+Scroll zoom, drag-to-pan, +/− buttons, and Reset
+- Reference index overlays: S&P 500, Nasdaq, TSX, VIX, BTC (dashed lines) — click the legend pill or uncheck the box to remove
 - Clickable ticker symbols linking to Yahoo Finance
-- Hover tooltips for dividend/split events, and a full collapsible event log table
-- Crosshair + Ctrl+Scroll zoom + drag-to-pan on the chart
-- Reference index overlays: S&P 500, Nasdaq, TSX, VIX, BTC (dashed lines)
-- Settings persist automatically via `localStorage`
-- Clear button to reset all fields
+- Hover tooltips for dividend/split events on the chart
+- Dark / light mode toggle, saved independently
+- All settings persist via `localStorage`; Clear button resets everything
 
 ## Data Source
 
-[Yahoo Finance's unofficial v8 chart API](https://query1.finance.yahoo.com/v8/finance/chart/),
-fetched directly from the browser. No backend, no API key required.
-
-**Important:** Yahoo's API does not send CORS headers, so a CORS-unblocking browser
-extension is required when running this as a local file. Click **⚡ Test CORS** in
-the app for setup instructions if you hit a CORS error.
+Yahoo Finance's unofficial v8 chart API, proxied through a Cloudflare Worker —
+no CORS extension required, works on mobile and any browser.
 
 ## Usage
 
 1. Download `index.html` (or clone this repo)
-2. Open it directly in Chrome (drag the file into a browser window, or `Ctrl+O`)
-3. If prompted by the CORS test, install a CORS-unblocking extension (link provided in-app)
-4. Enter tickers, a date range, and an investment amount
-5. Click **Run Analysis**
-
-No installation, no build step, no server.
+2. Open it in any browser — no server, no install, no build step
+3. Choose a mode (Manual Tickers or ETF Holdings), enter tickers and a date range
+4. Click **Run Analysis**
 
 ## Disclaimer
 
