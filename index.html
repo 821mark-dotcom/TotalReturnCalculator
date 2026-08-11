@@ -396,9 +396,14 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 .returns-table td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--border-sub);white-space:nowrap;}
 .returns-table td:first-child{text-align:left;}
 .returns-table td.rt-name-cell{text-align:left;color:var(--txt-md);max-width:180px;
-  overflow:hidden;text-overflow:ellipsis;font-family:inherit;}
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:inherit;cursor:default;}
+#rtNameTooltip{position:fixed;z-index:9999;pointer-events:none;display:none;
+  background:var(--bg-card);color:var(--txt);border:1px solid var(--border);
+  border-radius:6px;padding:5px 10px;font-size:.82rem;white-space:nowrap;
+  box-shadow:0 4px 12px rgba(0,0,0,.25);}
 .returns-table tr:hover td{background:var(--bg-input);}
-.ret-sym-link{color:var(--accent);text-decoration:none;font-weight:700;letter-spacing:.5px;}
+.ret-sym-link{color:#3b82f6;text-decoration:none;font-weight:700;letter-spacing:.5px;}
+[data-theme="light"] .ret-sym-link{color:#1d4ed8;}
 .ret-sym-link:hover{text-decoration:underline;}
 .ret-pos{color:var(--pos);}
 .ret-neg{color:var(--neg);}
@@ -566,6 +571,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
     <span class="chdr-arrow" id="returnsArrow">▼</span>
   </div>
   <div class="collapsible-body" id="returnsBody" style="display:block">
+    <div id="rtNameTooltip"></div>
     <div class="returns-table-wrap">
       <div class="rt-col-toggles" id="rtColToggles" style="display:none"></div>
       <div class="returns-loading" id="returnsLoading">Loading returns…</div>
@@ -2187,7 +2193,7 @@ function initRtColChips(){
     if(Array.isArray(saved)){
       rtHiddenCols=new Set(saved);
     } else {
-      rtHiddenCols=new Set(window.innerWidth<600?['name']:[]);
+      rtHiddenCols=new Set(['name']);
     }
     if(cfg.rtDripMode===true) rtDripMode=true;
   }catch(e){ rtHiddenCols=new Set(); }
@@ -2256,7 +2262,7 @@ function renderReturnsTable(){
     const ret=rtDripMode?r.returnsDrip:r.returns;
     const cells=cols.map(c=>{
       if(c.key==='sym') return `<td><a class="ret-sym-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(r.sym)}/" target="_blank" rel="noopener">${r.sym}</a></td>`;
-      if(c.key==='name') return `<td class="rt-name-cell" title="${r.name.replace(/"/g,'&quot;')}">${r.name}</td>`;
+      if(c.key==='name') return `<td class="rt-name-cell" data-fullname="${r.name.replace(/"/g,'&quot;')}">${r.name}</td>`;
       return `<td>${fmtRet(ret[c.key])}</td>`;
     }).join('');
     return `<tr>${cells}</tr>`;
@@ -2357,6 +2363,39 @@ function openHowTo(){document.getElementById('howtoOverlay').classList.add('open
 function closeHowTo(){document.getElementById('howtoOverlay').classList.remove('open');}
 function closeHowToOutside(e){if(e.target===document.getElementById('howtoOverlay'))closeHowTo();}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHowTo();});
+</script>
+<script>
+(function(){
+  const tip=document.getElementById('rtNameTooltip');
+  if(!tip) return;
+  function show(text,e){
+    tip.textContent=text;
+    tip.style.display='block';
+    move(e);
+  }
+  function move(e){
+    const pad=12, tw=tip.offsetWidth, th=tip.offsetHeight;
+    let x=e.clientX+pad, y=e.clientY+pad;
+    if(x+tw>window.innerWidth-8) x=e.clientX-tw-pad;
+    if(y+th>window.innerHeight-8) y=e.clientY-th-pad;
+    tip.style.left=x+'px';
+    tip.style.top=y+'px';
+  }
+  function hide(){tip.style.display='none';}
+  document.addEventListener('mouseover',function(e){
+    const cell=e.target.closest('td.rt-name-cell');
+    if(cell){ show(cell.getAttribute('data-fullname')||cell.textContent,e); return; }
+    const lnk=e.target.closest('a.ret-sym-link');
+    if(lnk){ show(lnk.href,e); return; }
+    hide();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(tip.style.display==='block') move(e);
+  });
+  document.addEventListener('mouseout',function(e){
+    if(!e.relatedTarget||(!e.relatedTarget.closest('td.rt-name-cell')&&!e.relatedTarget.closest('a.ret-sym-link'))) hide();
+  });
+})();
 </script>
 </body>
 </html>
