@@ -379,15 +379,9 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
       </div>
       <div class="holdings-body open" id="top10Body"></div>
     </div>
-    <div class="holdings-section">
-      <div class="holdings-hdr" id="allHoldingsHdr" onclick="toggleHoldings('allHoldings')">
-        <span class="hdr-title">All Available Holdings</span>
-        <span class="hdr-count" id="allHoldingsCount"></span>
-        <span class="hdr-arrow">▼</span>
-      </div>
-      <div class="holdings-body" id="allHoldingsBody"></div>
+    <div class="etf-note">Check holdings above · Click <strong>▶ Run Analysis</strong> to chart the ETF + selected holdings &nbsp;·&nbsp; <span class="price-only-badge">Price Return only</span>
+      &nbsp;·&nbsp; <a id="yahooHoldingsLink" href="#" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;border-bottom:1px dotted var(--accent);">Full holdings ↗</a>
     </div>
-    <div class="etf-note">Check holdings above · Click <strong>▶ Run Analysis</strong> to chart the ETF + selected holdings &nbsp;·&nbsp; <span class="price-only-badge">Price Return only</span></div>
   </div>
 </div>
 
@@ -873,7 +867,17 @@ function toggleCropMode(){
     document.getElementById('recalc-btn').style.display='none';
     setSt('Crop mode OFF.','idle');
   }
-  if(allData.length||Object.keys(activeIndices).length) renderChartWithIndices();
+  // Update zoom/pan options in-place — avoids destroying the chart and
+  // resetting zoom position or series visibility state.
+  if(chartInst){
+    const zp=chartInst.options.plugins.zoom;
+    zp.zoom.wheel.enabled=!cropMode;
+    zp.zoom.drag.enabled=cropMode;
+    zp.pan.enabled=!cropMode;
+    chartInst.update('none');
+  } else if(allData.length||Object.keys(activeIndices).length){
+    renderChartWithIndices();
+  }
 }
 function recalculateSelection(){
   if(!chartInst||!chartLabels.length) return;
@@ -886,7 +890,14 @@ function recalculateSelection(){
   cropMode=false;
   document.getElementById('tog-crop').classList.remove('on');
   document.getElementById('recalc-btn').style.display='none';
-  runAnalysis();
+  // In ETF mode re-use the data already loaded rather than re-fetching —
+  // this preserves series visibility that the user set before cropping.
+  if(appMode==='etf'){
+    renderChartWithIndices();
+    renderCards();
+  } else {
+    runAnalysis();
+  }
 }
 function toUnix(s){ return Math.floor(new Date(s+'T12:00:00Z').getTime()/1000); }
 function fmt$(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
@@ -1573,20 +1584,9 @@ function renderHoldingsList(sym){
     top10Body.appendChild(row);
   });
   document.getElementById('top10Count').textContent=`${top10.length} holding${top10.length!==1?'s':''}`;
-  // All holdings — display only
-  const allBody=document.getElementById('allHoldingsBody');
-  allBody.innerHTML='';
-  all.forEach(h=>{
-    const pct=(h.percent*100).toFixed(2);
-    const row=document.createElement('div');
-    row.className='holding-row';
-    row.innerHTML=`
-      <span class="holding-sym">${h.symbol}</span>
-      <span class="holding-name">${h.name}</span>
-      <span class="holding-pct${parseFloat(pct)>=5?' hi':''}">${pct}%</span>`;
-    allBody.appendChild(row);
-  });
-  document.getElementById('allHoldingsCount').textContent=`${all.length} total`;
+  // Yahoo Finance holdings page link
+  const link=document.getElementById('yahooHoldingsLink');
+  if(link) link.href=`https://finance.yahoo.com/quote/${encodeURIComponent(sym)}/holdings/`;
 
   // Percentage sanity check
   const pctSum = all.reduce((s,h)=>s+h.percent,0)*100;
