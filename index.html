@@ -397,11 +397,11 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 
 <!-- Mode tabs -->
 <div class="app-mode-tabs">
-  <button class="app-mode-tab on" id="tab-manual" onclick="setAppMode('manual')">
+  <button class="app-mode-tab on" id="tab-manual" onclick="setAppMode('manual');saveSettings()">
     <span class="tab-name">▦ Manual Tickers</span>
     <span class="tab-desc">Enter tickers to compare returns</span>
   </button>
-  <button class="app-mode-tab" id="tab-etf" onclick="setAppMode('etf')">
+  <button class="app-mode-tab" id="tab-etf" onclick="setAppMode('etf');saveSettings()">
     <span class="tab-name">⊞ ETF Holdings</span>
     <span class="tab-desc">Chart an ETF's top holdings</span>
   </button>
@@ -426,7 +426,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <div class="sec-label" style="margin-bottom:10px;">ETF / Index Ticker</div>
   <div class="etf-input-row">
     <input class="etf-ticker-inp" id="etfTicker" placeholder="QQQ" maxlength="10"
-      oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')loadHoldings()">
+      oninput="this.value=this.value.toUpperCase();saveSettings()" onkeydown="if(event.key==='Enter')loadHoldings()">
     <button class="load-btn" id="loadHoldingsBtn" onclick="loadHoldings()">Load Holdings</button>
   </div>
   <div class="sec-label" style="margin-bottom:8px;margin-top:4px">Compare Against (optional) — click dot to change colour</div>
@@ -675,6 +675,8 @@ function saveSettings(){
       activePreset,
       etfExtraColours:[...etfExtraColours],
       etfExtraSymbols:[0,1].map(j=>document.getElementById('etfExtra'+j)?.value||''),
+      appMode,
+      etfTicker: document.getElementById('etfTicker')?.value||'',
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(cfg));
     // Flash the save indicator
@@ -729,6 +731,10 @@ function loadSettings(){
     if(Array.isArray(cfg.etfExtraSymbols)){
       cfg.etfExtraSymbols.forEach((v,j)=>{ const el=document.getElementById('etfExtra'+j); if(el) el.value=v; });
     }
+    // App mode (Manual vs ETF tab)
+    if(cfg.appMode && cfg.appMode!=='manual') setAppMode(cfg.appMode);
+    // ETF ticker symbol
+    if(cfg.etfTicker){ const el=document.getElementById('etfTicker'); if(el) el.value=cfg.etfTicker; }
   }catch(e){ console.warn('Could not load settings:', e); }
 }
 
