@@ -307,6 +307,37 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   border-radius:3px;background:rgba(240,192,64,.12);color:#f0c040;
   border:1px solid rgba(240,192,64,.3);vertical-align:middle;margin-left:6px;text-transform:uppercase;}
 
+/* HowTo modal */
+.howto-btn{background:var(--bg-input);border:1px solid var(--border);color:var(--txt-md);
+  font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.5px;padding:7px 16px;
+  border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;align-self:center;}
+.howto-btn:hover{border-color:var(--accent);color:var(--accent);}
+.howto-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:none;align-items:center;justify-content:center;}
+.howto-overlay.open{display:flex;}
+.howto-modal{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;
+  padding:28px 32px;max-width:660px;width:90%;max-height:88vh;overflow-y:auto;position:relative;
+  box-shadow:0 16px 64px rgba(0,0,0,.7);}
+.howto-close{position:absolute;top:14px;right:16px;background:none;border:none;
+  font-size:22px;color:var(--txt-md);cursor:pointer;line-height:1;transition:color .15s;}
+.howto-close:hover{color:var(--txt-hi);}
+.howto-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;
+  color:var(--txt-hi);margin-bottom:20px;}
+.howto-section{margin-bottom:20px;}
+.howto-section-title{font-size:13.5px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border-sub);}
+.howto-section-desc{font-size:13.5px;color:var(--txt-lo);letter-spacing:.3px;line-height:1.5;margin-bottom:10px;}
+.howto-steps{list-style:none;padding:0;margin:0;}
+.howto-steps li{display:flex;gap:10px;align-items:baseline;font-size:15px;color:var(--txt-md);
+  letter-spacing:.3px;padding:5px 0;line-height:1.6;}
+.howto-steps li::before{content:attr(data-n);color:var(--accent);font-weight:600;font-size:13.5px;
+  min-width:20px;text-align:right;flex-shrink:0;}
+.howto-steps strong{color:var(--txt-hi);}
+.howto-steps code{background:var(--bg-input);border:1px solid var(--border-sub);border-radius:3px;
+  padding:1px 5px;font-size:13.5px;color:var(--accent);letter-spacing:.5px;}
+.howto-tip{font-size:13.5px;color:var(--txt-md);letter-spacing:.4px;line-height:1.6;
+  background:var(--bg-input);border:1px solid var(--border-sub);border-radius:5px;
+  padding:8px 12px;margin-top:8px;}
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width:1100px){
   .cards{grid-template-columns:repeat(3,1fr);}
@@ -353,6 +384,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <div class="header">
   <div class="title">Total Return Calculator</div>
   <div class="subtitle">Yahoo Finance · Price + Dividends + Splits · DRIP Reinvested</div>
+  <button class="howto-btn" onclick="openHowTo()" title="How to use this app"><span style="color:var(--accent)">?</span> HowTo</button>
   <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙 Dark</button>
 </div>
 
@@ -373,7 +405,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <div id="manualTickerSection">
   <div class="tab-info">
     <span class="tab-info-icon">▦</span>
-    <span>Type any stock, ETF, or index ticker into the boxes below (up to 5). Click the coloured dot to change the line colour. Set a date range, initial investment, and tax rate — then hit <strong>Run Analysis</strong>.</span>
+    <span>Type any stock, ETF, or index ticker into boxes below (up to 5). Click coloured dot to change line colour. Set a date range, initial investment, and tax rate — then hit <strong>Run Analysis</strong>.</span>
   </div>
   <div class="sec-label" style="margin-bottom:10px;">Tickers — click the dot to change colour</div>
   <div class="ticker-row" id="tickerRow"></div>
@@ -1861,5 +1893,54 @@ async function runAnalysis(){
 }
 </script>
 <div class="save-flash" id="saveFlash">✓ Settings saved</div>
+
+<!-- HowTo Modal -->
+<div class="howto-overlay" id="howtoOverlay" onclick="closeHowToOutside(event)">
+  <div class="howto-modal">
+    <button class="howto-close" onclick="closeHowTo()" title="Close">✕</button>
+    <div class="howto-title">How To Use</div>
+
+    <div class="howto-section">
+      <div class="howto-section-title">▦ Manual Tickers</div>
+      <div class="howto-section-desc">Compare up to 5 stocks or ETFs side-by-side, with dividends reinvested (DRIP) and splits applied.</div>
+      <ol class="howto-steps">
+        <li data-n="1"><span>Enter up to 5 tickers — e.g. <code>AAPL</code>, <code>RY.TO</code>, <code>SPY</code>.</span></li>
+        <li data-n="2"><span>Click the <strong>coloured dot</strong> to change a line's colour.</span></li>
+        <li data-n="3"><span>Pick a <strong>date range</strong> (preset or custom) and set your <strong>investment amount</strong>.</span></li>
+        <li data-n="4"><span>Set <strong>tax on dividends</strong> — 0% for TFSA/RRSP, or 15–40% for taxable.</span></li>
+        <li data-n="5"><span>Click <strong>▶ Run Analysis</strong>.</span></li>
+      </ol>
+    </div>
+
+    <div class="howto-section">
+      <div class="howto-section-title">⊞ ETF Holdings</div>
+      <div class="howto-section-desc">Load any ETF and chart its top holdings individually — useful for seeing which stocks are driving performance.</div>
+      <ol class="howto-steps">
+        <li data-n="1"><span>Click the <strong>ETF Holdings</strong> tab, type a ticker (e.g. <code>QQQ</code>), click <strong>Load Holdings</strong>.</span></li>
+        <li data-n="2"><span>Check the holdings to chart. Optionally add up to 2 extra <strong>Compare Against</strong> tickers.</span></li>
+        <li data-n="3"><span>Click <strong>▶ Run Analysis</strong>.</span></li>
+      </ol>
+    </div>
+
+    <div class="howto-section">
+      <div class="howto-section-title">Chart Options</div>
+      <ol class="howto-steps">
+        <li data-n="→"><span><strong>View:</strong> Total Return · Price Return · Div+Split · Raw Price &nbsp;|&nbsp; <strong>$ / %</strong> toggle.</span></li>
+        <li data-n="→"><span><strong>Indices:</strong> overlay S&amp;P 500, Nasdaq, TSX, VIX, or BTC.</span></li>
+        <li data-n="→"><span><strong>Zoom:</strong> Ctrl+Scroll or pinch · drag to pan · +/− · Reset.</span></li>
+        <li data-n="→"><span><strong>✂ Crop:</strong> drag on the chart to re-run from a zoomed window.</span></li>
+        <li data-n="→"><span>Click a <strong>legend item</strong> to hide/show · click a <strong>ticker</strong> to open Yahoo Finance.</span></li>
+      </ol>
+      <div class="howto-tip">Settings save automatically. <strong>✕ Clear</strong> resets everything.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openHowTo(){document.getElementById('howtoOverlay').classList.add('open');}
+function closeHowTo(){document.getElementById('howtoOverlay').classList.remove('open');}
+function closeHowToOutside(e){if(e.target===document.getElementById('howtoOverlay'))closeHowTo();}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHowTo();});
+</script>
 </body>
 </html>
