@@ -788,6 +788,7 @@ function clearAll(){
   // Remove dynamically-created legend items (from ETF mode)
   document.getElementById('legend').querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
   document.getElementById('evTableSection').style.display='none';
+  loadReturnsTable([]);
   setSt('Fields cleared. Enter tickers and click Run Analysis.','idle');
   // Reset form fields to defaults
   setPreset('1Y');
