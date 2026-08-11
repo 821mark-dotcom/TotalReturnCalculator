@@ -410,6 +410,8 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   background:var(--bg-input);color:var(--txt-md);transition:background .15s,color .15s;}
 .rt-col-chip.rt-chip-on{background:#4a8fd4;color:#fff;border-color:#4a8fd4;}
 .rt-col-chip:hover{opacity:.85;}
+.rt-drip-sep{width:1px;background:var(--border);align-self:stretch;margin:0 4px;}
+.rt-drip-chip{font-weight:600;letter-spacing:.5px;}
 .ret-na{color:var(--txt-lo);}
 .returns-loading{text-align:center;padding:16px;color:var(--txt-md);font-size:13px;font-family:'IBM Plex Mono',monospace;}
 .rt-footnote{font-size:11px;color:var(--txt-lo);padding:6px 2px 2px;font-family:'IBM Plex Mono',monospace;}
@@ -571,7 +573,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
         <thead id="returnsThead"></thead>
         <tbody id="returnsTbody"></tbody>
       </table>
-      <div class="rt-footnote">Price Return only (no DRIP) · 3 Yr &amp; 5 Yr use split-adjusted prices, which may include a small dividend component for tickers that have had stock splits</div>
+      <div class="rt-footnote" id="rtFootnote">Price Return only (no DRIP) · 3 Yr &amp; 5 Yr include dividend adjustment for split-adjusted tickers</div>
     </div>
   </div>
 </div>
@@ -2039,7 +2041,7 @@ async function runAnalysis(){
 }
 
 // ── Returns Table ──────────────────────────────────────────────────────────────
-let rtSortCol=null, rtSortDir=1, rtData=[];
+let rtSortCol=null, rtSortDir=1, rtData=[], rtDripMode=false;
 
 const RT_PERIODS=[
   {key:'ytd',label:'YTD'},
@@ -2114,8 +2116,8 @@ function calcPeriodReturn(data,targetMs,maxGapDays=30,useAdj=false){
 
 // 5D: Yahoo Finance means 5 trading days, not 5 calendar days.
 // Use the 5th-most-recent data point as the start price.
-function calc5DReturn(data){
-  const pts=buildPts(data,false);
+function calc5DReturn(data,useAdj=false){
+  const pts=buildPts(data,useAdj);
   if(pts.length<6) return null;
   const last=pts[pts.length-1].c;
   const start=pts[pts.length-6].c;
@@ -2131,28 +2133,37 @@ function msAgo(months,years,days){
 }
 
 async function fetchTickerReturns(sym){
-  // daily: 1Y of raw close — correct for short periods (no splits in recent 1Y windows).
-  // longDaily: 5Y with adjclose — handles splits that fall within the 3Y/5Y window.
+  // Fetch both datasets with adjclose so the DRIP toggle can switch without re-fetching.
   const [daily,longDaily]=await Promise.all([
-    fetchChartRanged(sym,'1y','1d',false),
+    fetchChartRanged(sym,'1y','1d',true),
     fetchChartRanged(sym,'5y','1d',true),
   ]);
   const name=daily?.meta?.shortName||daily?.meta?.longName||
              longDaily?.meta?.shortName||longDaily?.meta?.longName||sym;
   const ytdMs=new Date(new Date().getFullYear(),0,1).getTime();
-  return{
-    sym, name,
-    returns:{
-      ytd: calcPeriodReturn(daily,   ytdMs),
-      '5d':calc5DReturn(daily),
-      '1m': calcPeriodReturn(daily,   msAgo(1)),
-      '3m': calcPeriodReturn(daily,   msAgo(3)),
-      '6m': calcPeriodReturn(daily,   msAgo(6)),
-      '1y': calcPeriodReturn(daily,   msAgo(0,1)),
-      '3y': calcPeriodReturn(longDaily,msAgo(0,3),5,true),
-      '5y': calcPeriodReturn(longDaily,msAgo(0,5),5,true),
-    }
+  // Non-DRIP: short periods use raw close; 3Y/5Y always use adjclose for split handling.
+  const returns={
+    ytd: calcPeriodReturn(daily,   ytdMs,       30,  false),
+    '5d':calc5DReturn(daily,                        false),
+    '1m': calcPeriodReturn(daily,   msAgo(1),    30,  false),
+    '3m': calcPeriodReturn(daily,   msAgo(3),    30,  false),
+    '6m': calcPeriodReturn(daily,   msAgo(6),    30,  false),
+    '1y': calcPeriodReturn(daily,   msAgo(0,1),  30,  false),
+    '3y': calcPeriodReturn(longDaily,msAgo(0,3), 5,   true),
+    '5y': calcPeriodReturn(longDaily,msAgo(0,5), 5,   true),
   };
+  // DRIP: all periods use adjclose.
+  const returnsDrip={
+    ytd: calcPeriodReturn(daily,   ytdMs,       30,  true),
+    '5d':calc5DReturn(daily,                        true),
+    '1m': calcPeriodReturn(daily,   msAgo(1),    30,  true),
+    '3m': calcPeriodReturn(daily,   msAgo(3),    30,  true),
+    '6m': calcPeriodReturn(daily,   msAgo(6),    30,  true),
+    '1y': calcPeriodReturn(daily,   msAgo(0,1),  30,  true),
+    '3y': returns['3y'],
+    '5y': returns['5y'],
+  };
+  return{sym, name, returns, returnsDrip};
 }
 
 function fmtRet(v){
@@ -2175,19 +2186,21 @@ function initRtColChips(){
     if(Array.isArray(saved)){
       rtHiddenCols=new Set(saved);
     } else {
-      // default: hide Name on small screens
       rtHiddenCols=new Set(window.innerWidth<600?['name']:[]);
     }
+    if(cfg.rtDripMode===true) rtDripMode=true;
   }catch(e){ rtHiddenCols=new Set(); }
 }
 
 function buildRtColChips(){
   const wrap=document.getElementById('rtColToggles');
   if(!wrap) return;
-  wrap.innerHTML=`<span class="rt-col-toggles-label">Columns</span>`+RT_ALL_COLS.map(c=>{
+  const colChips=RT_ALL_COLS.map(c=>{
     const on=!rtHiddenCols.has(c.key);
     return `<span class="rt-col-chip${on?' rt-chip-on':''}" onclick="toggleRtCol('${c.key}')">${c.label}</span>`;
   }).join('');
+  const dripChip=`<span class="rt-col-chip rt-drip-chip${rtDripMode?' rt-chip-on':''}" onclick="toggleRtDrip()">DRIP</span>`;
+  wrap.innerHTML=`<span class="rt-col-toggles-label">Columns</span>${colChips}<span class="rt-drip-sep"></span>${dripChip}`;
 }
 
 function toggleRtCol(key){
@@ -2201,19 +2214,32 @@ function toggleRtCol(key){
   }catch(e){}
 }
 
+function toggleRtDrip(){
+  rtDripMode=!rtDripMode;
+  renderReturnsTable();
+  try{
+    const cfg=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+    cfg.rtDripMode=rtDripMode;
+    localStorage.setItem(STORE_KEY,JSON.stringify(cfg));
+  }catch(e){}
+}
+
 function renderReturnsTable(){
   const thead=document.getElementById('returnsThead');
   const tbody=document.getElementById('returnsTbody');
   const tbl=document.getElementById('returnsTable');
   const chipsWrap=document.getElementById('rtColToggles');
+  const footnote=document.getElementById('rtFootnote');
   if(!thead||!tbody||!tbl) return;
   let rows=[...rtData];
   if(rtSortCol!==null){
     rows.sort((a,b)=>{
+      const ra=rtDripMode?a.returnsDrip:a.returns;
+      const rb=rtDripMode?b.returnsDrip:b.returns;
       let av,bv;
       if(rtSortCol==='sym'){ av=a.sym; bv=b.sym; }
       else if(rtSortCol==='name'){ av=a.name; bv=b.name; }
-      else{ av=a.returns[rtSortCol]; bv=b.returns[rtSortCol]; }
+      else{ av=ra[rtSortCol]; bv=rb[rtSortCol]; }
       if(av==null&&bv==null) return 0;
       if(av==null) return 1; if(bv==null) return -1;
       return typeof av==='string'?av.localeCompare(bv)*rtSortDir:(av-bv)*rtSortDir;
@@ -2226,15 +2252,24 @@ function renderReturnsTable(){
     return `<th class="${cls}" onclick="rtSort('${c.key}')">${c.label}</th>`;
   }).join('')}</tr>`;
   tbody.innerHTML=rows.map(r=>{
+    const ret=rtDripMode?r.returnsDrip:r.returns;
     const cells=cols.map(c=>{
       if(c.key==='sym') return `<td><a class="ret-sym-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(r.sym)}/" target="_blank" rel="noopener">${r.sym}</a></td>`;
       if(c.key==='name') return `<td class="rt-name-cell" title="${r.name.replace(/"/g,'&quot;')}">${r.name}</td>`;
-      return `<td>${fmtRet(r.returns[c.key])}</td>`;
+      return `<td>${fmtRet(ret[c.key])}</td>`;
     }).join('');
     return `<tr>${cells}</tr>`;
   }).join('');
   tbl.style.display='';
   if(chipsWrap) chipsWrap.style.display='';
+  if(footnote){
+    if(rtDripMode){
+      footnote.style.display='none';
+    } else {
+      footnote.textContent='Price Return only (no DRIP) · 3 Yr & 5 Yr include dividend adjustment for split-adjusted tickers';
+      footnote.style.display='';
+    }
+  }
 }
 
 function rtSort(col){
