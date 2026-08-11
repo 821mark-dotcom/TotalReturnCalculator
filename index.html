@@ -385,7 +385,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 /* ── Returns Table ────────────────────────────────────────────────────────── */
 #returnsSection{margin-bottom:12px;}
 .returns-table-wrap{overflow-x:auto;}
-.returns-table{width:100%;border-collapse:collapse;font-size:13px;font-family:'IBM Plex Mono',monospace;}
+.returns-table{width:auto;border-collapse:collapse;font-size:13px;font-family:'IBM Plex Mono',monospace;}
 .returns-table th{padding:7px 10px;text-align:right;cursor:pointer;user-select:none;white-space:nowrap;
   color:var(--txt-md);font-weight:500;letter-spacing:.5px;border-bottom:1px solid var(--border);
   background:var(--bg-input);position:relative;}
@@ -395,15 +395,24 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 .returns-table th.sort-desc::after{content:' ↓';color:var(--accent);}
 .returns-table td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--border-sub);white-space:nowrap;}
 .returns-table td:first-child{text-align:left;}
-.returns-table td:nth-child(2){text-align:left;color:var(--txt-md);max-width:180px;
+.returns-table td.rt-name-cell{text-align:left;color:var(--txt-md);max-width:180px;
   overflow:hidden;text-overflow:ellipsis;font-family:inherit;}
 .returns-table tr:hover td{background:var(--bg-input);}
 .ret-sym-link{color:var(--accent);text-decoration:none;font-weight:700;letter-spacing:.5px;}
 .ret-sym-link:hover{text-decoration:underline;}
 .ret-pos{color:var(--pos);}
 .ret-neg{color:var(--neg);}
+/* column toggle chips */
+.rt-col-toggles{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:8px 2px 6px;}
+.rt-col-toggles-label{font-size:11px;color:var(--txt-md);white-space:nowrap;margin-right:2px;letter-spacing:.5px;text-transform:uppercase;}
+.rt-col-chip{padding:3px 9px;border-radius:12px;font-size:11px;font-family:'IBM Plex Mono',monospace;
+  cursor:pointer;user-select:none;border:1px solid var(--border);
+  background:var(--bg-input);color:var(--txt-md);transition:background .15s,color .15s;}
+.rt-col-chip.rt-chip-on{background:#4a8fd4;color:#fff;border-color:#4a8fd4;}
+.rt-col-chip:hover{opacity:.85;}
 .ret-na{color:var(--txt-lo);}
 .returns-loading{text-align:center;padding:16px;color:var(--txt-md);font-size:13px;font-family:'IBM Plex Mono',monospace;}
+.rt-footnote{font-size:11px;color:var(--txt-lo);padding:6px 2px 2px;font-family:'IBM Plex Mono',monospace;}
 </style>
 </head>
 <body>
@@ -556,11 +565,13 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   </div>
   <div class="collapsible-body" id="returnsBody" style="display:block">
     <div class="returns-table-wrap">
+      <div class="rt-col-toggles" id="rtColToggles" style="display:none"></div>
       <div class="returns-loading" id="returnsLoading">Loading returns…</div>
       <table class="returns-table" id="returnsTable" style="display:none">
         <thead id="returnsThead"></thead>
         <tbody id="returnsTbody"></tbody>
       </table>
+      <div class="rt-footnote">Price Return only (no DRIP) · 3 Yr &amp; 5 Yr use split-adjusted prices, which may include a small dividend component for tickers that have had stock splits</div>
     </div>
   </div>
 </div>
@@ -618,6 +629,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DEFAULT_COLOURS = ['#2ab5a5','#e9c46a','#e76f51','#a8d8ea','#c77dff'];
+let rtHiddenCols=new Set();
 const PLACEHOLDERS    = ['AAPL','MSFT','NVDA','RY.TO','AMDY.TO'];
 const DEF_TICKERS     = ['AAPL','MSFT','NVDA','',''];
 // 40 colours across 20 evenly-spaced hues (18° apart on the colour wheel),
@@ -2053,8 +2065,9 @@ function toggleReturns(){
   }catch(e){}
 }
 
-async function fetchChartRanged(sym,range,interval){
-  const url=`${YAHOO_BASE}/${encodeURIComponent(sym)}?range=${range}&interval=${interval}`;
+async function fetchChartRanged(sym,range,interval,adjClose=false){
+  const adj=adjClose?'&includeAdjustedClose=true':'';
+  const url=`${YAHOO_BASE}/${encodeURIComponent(sym)}?range=${range}&interval=${interval}${adj}`;
   try{
     const resp=await fetch(url,{headers:YAHOO_HDR});
     if(!resp.ok) return null;
@@ -2063,24 +2076,50 @@ async function fetchChartRanged(sym,range,interval){
   }catch(e){ return null; }
 }
 
-function calcPeriodReturn(data,targetMs,maxGapDays=30){
-  if(!data) return null;
+// Build a pts array from Yahoo chart data.
+// useAdj=false → raw close (split-UNadjusted) — correct for recent periods with no splits.
+// useAdj=true  → adjclose (split+dividend adjusted) — needed when the window spans a split.
+function buildPts(data,useAdj=false){
+  if(!data) return [];
   const ts=data.timestamp||[];
-  const cl=data.indicators?.quote?.[0]?.close||[];
+  const cl=useAdj
+    ?(data.indicators?.adjclose?.[0]?.adjclose||data.indicators?.quote?.[0]?.close||[])
+    :(data.indicators?.quote?.[0]?.close||[]);
   const pts=[];
   for(let i=0;i<ts.length;i++){
     if(cl[i]!=null&&cl[i]>0) pts.push({t:ts[i]*1000,c:cl[i]});
   }
+  return pts;
+}
+
+// Return the % change from the last trading day on or before targetMs to the most recent close.
+// Yahoo Finance hover uses this same convention: last close at-or-before the period start date.
+function calcPeriodReturn(data,targetMs,maxGapDays=30,useAdj=false){
+  const pts=buildPts(data,useAdj);
   if(pts.length<2) return null;
-  // If the earliest data starts more than maxGapDays after the target date,
-  // the ticker didn't exist then — return null rather than misrepresenting
-  // a shorter period as the full requested one.
-  if(pts[0].t > targetMs + maxGapDays*86400000) return null;
+  // Treat targetMs as end-of-day so any bar that falls on that calendar date qualifies.
+  const eod=new Date(targetMs);
+  eod.setHours(23,59,59,999);
+  const eodMs=eod.getTime();
+  if(pts[0].t > eodMs + maxGapDays*86400000) return null;
   const last=pts[pts.length-1].c;
+  // Walk backward to find the last bar on or before the target date.
   let startClose=null;
-  for(const p of pts){ if(p.t>=targetMs){ startClose=p.c; break; } }
+  for(let i=pts.length-1;i>=0;i--){
+    if(pts[i].t<=eodMs){ startClose=pts[i].c; break; }
+  }
   if(!startClose) startClose=pts[0].c;
   return (last-startClose)/startClose*100;
+}
+
+// 5D: Yahoo Finance means 5 trading days, not 5 calendar days.
+// Use the 5th-most-recent data point as the start price.
+function calc5DReturn(data){
+  const pts=buildPts(data,false);
+  if(pts.length<6) return null;
+  const last=pts[pts.length-1].c;
+  const start=pts[pts.length-6].c;
+  return (last-start)/start*100;
 }
 
 function msAgo(months,years,days){
@@ -2092,24 +2131,26 @@ function msAgo(months,years,days){
 }
 
 async function fetchTickerReturns(sym){
-  const [daily,monthly]=await Promise.all([
-    fetchChartRanged(sym,'1y','1d'),
-    fetchChartRanged(sym,'5y','1mo'),
+  // daily: 1Y of raw close — correct for short periods (no splits in recent 1Y windows).
+  // longDaily: 5Y with adjclose — handles splits that fall within the 3Y/5Y window.
+  const [daily,longDaily]=await Promise.all([
+    fetchChartRanged(sym,'1y','1d',false),
+    fetchChartRanged(sym,'5y','1d',true),
   ]);
   const name=daily?.meta?.shortName||daily?.meta?.longName||
-             monthly?.meta?.shortName||monthly?.meta?.longName||sym;
+             longDaily?.meta?.shortName||longDaily?.meta?.longName||sym;
   const ytdMs=new Date(new Date().getFullYear(),0,1).getTime();
   return{
     sym, name,
     returns:{
-      ytd: calcPeriodReturn(daily,  ytdMs),
-      '5d':calcPeriodReturn(daily,  msAgo(0,0,5)),
-      '1m': calcPeriodReturn(daily,  msAgo(1)),
-      '3m': calcPeriodReturn(daily,  msAgo(3)),
-      '6m': calcPeriodReturn(daily,  msAgo(6)),
-      '1y': calcPeriodReturn(daily,  msAgo(0,1)),
-      '3y': calcPeriodReturn(monthly,msAgo(0,3),60),
-      '5y': calcPeriodReturn(monthly,msAgo(0,5),60),
+      ytd: calcPeriodReturn(daily,   ytdMs),
+      '5d':calc5DReturn(daily),
+      '1m': calcPeriodReturn(daily,   msAgo(1)),
+      '3m': calcPeriodReturn(daily,   msAgo(3)),
+      '6m': calcPeriodReturn(daily,   msAgo(6)),
+      '1y': calcPeriodReturn(daily,   msAgo(0,1)),
+      '3y': calcPeriodReturn(longDaily,msAgo(0,3),5,true),
+      '5y': calcPeriodReturn(longDaily,msAgo(0,5),5,true),
     }
   };
 }
@@ -2121,10 +2162,50 @@ function fmtRet(v){
   return cls?`<span class="${cls}">${str}</span>`:str;
 }
 
+const RT_ALL_COLS=[
+  {key:'sym',  label:'Symbol'},
+  {key:'name', label:'Name'},
+  ...RT_PERIODS.map(p=>({key:p.key,label:p.label})),
+];
+
+function initRtColChips(){
+  try{
+    const cfg=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+    const saved=cfg.rtHiddenCols;
+    if(Array.isArray(saved)){
+      rtHiddenCols=new Set(saved);
+    } else {
+      // default: hide Name on small screens
+      rtHiddenCols=new Set(window.innerWidth<600?['name']:[]);
+    }
+  }catch(e){ rtHiddenCols=new Set(); }
+}
+
+function buildRtColChips(){
+  const wrap=document.getElementById('rtColToggles');
+  if(!wrap) return;
+  wrap.innerHTML=`<span class="rt-col-toggles-label">Columns</span>`+RT_ALL_COLS.map(c=>{
+    const on=!rtHiddenCols.has(c.key);
+    return `<span class="rt-col-chip${on?' rt-chip-on':''}" onclick="toggleRtCol('${c.key}')">${c.label}</span>`;
+  }).join('');
+}
+
+function toggleRtCol(key){
+  if(rtHiddenCols.has(key)) rtHiddenCols.delete(key); else rtHiddenCols.add(key);
+  buildRtColChips();
+  renderReturnsTable();
+  try{
+    const cfg=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+    cfg.rtHiddenCols=[...rtHiddenCols];
+    localStorage.setItem(STORE_KEY,JSON.stringify(cfg));
+  }catch(e){}
+}
+
 function renderReturnsTable(){
   const thead=document.getElementById('returnsThead');
   const tbody=document.getElementById('returnsTbody');
   const tbl=document.getElementById('returnsTable');
+  const chipsWrap=document.getElementById('rtColToggles');
   if(!thead||!tbody||!tbl) return;
   let rows=[...rtData];
   if(rtSortCol!==null){
@@ -2138,21 +2219,22 @@ function renderReturnsTable(){
       return typeof av==='string'?av.localeCompare(bv)*rtSortDir:(av-bv)*rtSortDir;
     });
   }
-  const cols=[
-    {key:'sym',  label:'Symbol'},
-    {key:'name', label:'Name'},
-    ...RT_PERIODS.map(p=>({key:p.key,label:p.label})),
-  ];
+  buildRtColChips();
+  const cols=RT_ALL_COLS.filter(c=>!rtHiddenCols.has(c.key));
   thead.innerHTML=`<tr>${cols.map(c=>{
     const cls=rtSortCol===c.key?(rtSortDir===1?'sort-asc':'sort-desc'):'';
     return `<th class="${cls}" onclick="rtSort('${c.key}')">${c.label}</th>`;
   }).join('')}</tr>`;
-  tbody.innerHTML=rows.map(r=>`<tr>
-    <td><a class="ret-sym-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(r.sym)}/" target="_blank" rel="noopener">${r.sym}</a></td>
-    <td title="${r.name.replace(/"/g,'&quot;')}">${r.name}</td>
-    ${RT_PERIODS.map(p=>`<td>${fmtRet(r.returns[p.key])}</td>`).join('')}
-  </tr>`).join('');
+  tbody.innerHTML=rows.map(r=>{
+    const cells=cols.map(c=>{
+      if(c.key==='sym') return `<td><a class="ret-sym-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(r.sym)}/" target="_blank" rel="noopener">${r.sym}</a></td>`;
+      if(c.key==='name') return `<td class="rt-name-cell" title="${r.name.replace(/"/g,'&quot;')}">${r.name}</td>`;
+      return `<td>${fmtRet(r.returns[c.key])}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
   tbl.style.display='';
+  if(chipsWrap) chipsWrap.style.display='';
 }
 
 function rtSort(col){
@@ -2186,8 +2268,8 @@ function initReturnsTable(){
       document.getElementById('returnsArrow').textContent='▶';
     }
   }catch(e){}
-  const tickers=[0,1,2,3,4].map(i=>document.getElementById('t'+i)?.value.trim().toUpperCase()||'').filter(Boolean);
-  loadReturnsTable(tickers);
+  initRtColChips();
+  loadReturnsTable([]);
 }
 </script>
 <div class="save-flash" id="saveFlash">✓ Settings saved</div>
