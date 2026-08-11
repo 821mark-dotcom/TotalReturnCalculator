@@ -216,10 +216,10 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 .calc-note{font-size:13.5px;color:var(--txt-lo);margin-top:4px;letter-spacing:.3px;}
 
 /* Tax button group */
-.tax-grp{display:flex;width:100%;border:1px solid var(--border);border-radius:5px;overflow:hidden;}
-.tax-btn{flex:1;background:var(--bg-input);border:none;border-right:1px solid var(--border-sub);
+.tax-grp{display:inline-flex;border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+.tax-btn{background:var(--bg-input);border:none;border-right:1px solid var(--border-sub);
   color:var(--txt-md);font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:500;
-  letter-spacing:.3px;padding:9px 4px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  letter-spacing:.3px;padding:9px 0;min-width:44px;text-align:center;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .tax-btn:last-child{border-right:none;}
 .tax-btn:hover{color:var(--body-txt);background:var(--border-sub);}
 .tax-btn.on{background:var(--accent);color:var(--bg-base);font-weight:600;}
@@ -381,6 +381,29 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   .indices-bar{gap:8px;padding:8px 10px;}
   .idx-check{font-size:13.5px;}
 }
+
+/* ── Returns Table ────────────────────────────────────────────────────────── */
+#returnsSection{margin-bottom:12px;}
+.returns-table-wrap{overflow-x:auto;}
+.returns-table{width:100%;border-collapse:collapse;font-size:13px;font-family:'IBM Plex Mono',monospace;}
+.returns-table th{padding:7px 10px;text-align:right;cursor:pointer;user-select:none;white-space:nowrap;
+  color:var(--txt-md);font-weight:500;letter-spacing:.5px;border-bottom:1px solid var(--border);
+  background:var(--bg-input);position:relative;}
+.returns-table th:first-child,.returns-table th:nth-child(2){text-align:left;}
+.returns-table th:hover{color:var(--txt-hi);}
+.returns-table th.sort-asc::after{content:' ↑';color:var(--accent);}
+.returns-table th.sort-desc::after{content:' ↓';color:var(--accent);}
+.returns-table td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--border-sub);white-space:nowrap;}
+.returns-table td:first-child{text-align:left;}
+.returns-table td:nth-child(2){text-align:left;color:var(--txt-md);max-width:180px;
+  overflow:hidden;text-overflow:ellipsis;font-family:inherit;}
+.returns-table tr:hover td{background:var(--bg-input);}
+.ret-sym-link{color:var(--accent);text-decoration:none;font-weight:700;letter-spacing:.5px;}
+.ret-sym-link:hover{text-decoration:underline;}
+.ret-pos{color:var(--pos);}
+.ret-neg{color:var(--neg);}
+.ret-na{color:var(--txt-lo);}
+.returns-loading{text-align:center;padding:16px;color:var(--txt-md);font-size:13px;font-family:'IBM Plex Mono',monospace;}
 </style>
 </head>
 <body>
@@ -413,7 +436,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
     <span class="tab-info-icon">▦</span>
     <span>Type any stock, ETF, or index ticker into boxes below (up to 5). Click coloured dot to change line colour. Set a date range, initial investment, and tax rate — then hit <strong>Run Analysis</strong>.</span>
   </div>
-  <div class="sec-label" style="margin-bottom:10px;">Tickers — click the dot to change colour</div>
+  <div class="sec-label" style="margin-bottom:10px;">Tickers — click dot to change colour</div>
   <div class="ticker-row" id="tickerRow"></div>
 </div>
 
@@ -450,7 +473,6 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 <div class="date-range-section">
   <div class="sec-label" style="margin-bottom:8px">Date range</div>
   <div class="preset-row">
-    <button class="preset-btn" data-preset="1D"  onclick="setPreset('1D')">1D</button>
     <button class="preset-btn" data-preset="5D"  onclick="setPreset('5D')">5D</button>
     <button class="preset-btn" data-preset="1M"  onclick="setPreset('1M')">1M</button>
     <button class="preset-btn" data-preset="3M"  onclick="setPreset('3M')">3M</button>
@@ -479,7 +501,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
       <button class="tax-btn" data-val="custom" onclick="setTaxCustom()">…</button>
     </div>
     <input class="inv-input" id="taxCustomInp" type="text" placeholder="Custom %" inputmode="numeric"
-      style="display:none;margin-top:6px;font-size:16px;padding:6px 10px;" oninput="onTaxCustomInput(this)">
+      style="display:none;margin-top:6px;font-size:16px;padding:6px 10px;width:220px;max-width:100%;" oninput="onTaxCustomInput(this)">
     <div class="calc-note" id="taxNote">25% mid bracket</div>
   </div>
 </div>
@@ -526,6 +548,23 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
 </div>
 
 <div class="status idle" id="status"><span id="statusText">Enter tickers and click Run Analysis.</span><a id="yahooLink" href="#" target="_blank" rel="noopener" style="display:none"></a></div>
+
+<!-- Returns Table — collapsible -->
+<div id="returnsSection">
+  <div class="collapsible-hdr" id="returnsHdr" onclick="toggleReturns()">
+    <span class="chdr-title">📊 Rate of Returns Table</span>
+    <span class="chdr-arrow" id="returnsArrow">▼</span>
+  </div>
+  <div class="collapsible-body" id="returnsBody" style="display:block">
+    <div class="returns-table-wrap">
+      <div class="returns-loading" id="returnsLoading">Loading returns…</div>
+      <table class="returns-table" id="returnsTable" style="display:none">
+        <thead id="returnsThead"></thead>
+        <tbody id="returnsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 <div class="legend" id="legend">
   <div class="leg-item" id="leg0" onclick="toggleSeries(0)"><div class="leg-dot" id="leg0-dot"></div><span id="leg0-lbl"></span><div class="leg-tip" id="leg0-tip"></div></div>
@@ -831,6 +870,7 @@ function applyTaxUI(valStr){
 function setTax(val){ applyTaxUI(String(val)); }
 function setTaxCustom(){
   document.querySelectorAll('.tax-btn[data-val]').forEach(btn=>btn.classList.toggle('on',btn.dataset.val==='custom'));
+  document.getElementById('taxNote').textContent='';
   const ci=document.getElementById('taxCustomInp');
   ci.style.display=''; ci.focus();
 }
@@ -888,8 +928,12 @@ function buildTickers(){
 loadTheme();      // apply saved theme before building UI
 buildTickers();
 buildEtfExtraTickers();
-setPreset('1Y'); // set default dates before loadSettings may override
+// Apply 1Y default without calling saveSettings — prevents clobbering stored ETF fields
+activePreset='1Y';
+applyPreset('1Y');
+document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('on',b.dataset.preset==='1Y'));
 loadSettings();   // restore saved settings (overrides defaults if present)
+initReturnsTable();
 
 document.addEventListener('click',e=>{
   if(openPicker!==null){
@@ -1749,6 +1793,7 @@ function setAppMode(mode){
   }
   document.getElementById('legend').querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
   document.getElementById('evTableSection').style.display='none';
+  loadReturnsTable([]);
   setSt(mode==='etf'
     ?'Enter an ETF ticker and click Load Holdings.'
     :'Enter tickers and click Run Analysis.','idle');
@@ -1931,6 +1976,7 @@ async function runEtfAnalysis(){
   renderChartWithIndices();
   renderCards();
   renderEventTable();
+  loadReturnsTable([etfTickerSym,...checked.map(h=>h.symbol),...extraSymbols]);
 }
 
 // ── Run ───────────────────────────────────────────────────────────────────────
@@ -1977,6 +2023,171 @@ async function runAnalysis(){
 
   renderChartWithIndices(); renderCards(); renderEventTable();
   saveSettings();
+  loadReturnsTable(allData.map(d=>d.sym));
+}
+
+// ── Returns Table ──────────────────────────────────────────────────────────────
+let rtSortCol=null, rtSortDir=1, rtData=[];
+
+const RT_PERIODS=[
+  {key:'ytd',label:'YTD'},
+  {key:'5d', label:'5D'},
+  {key:'1m', label:'1 Mo'},
+  {key:'3m', label:'3 Mo'},
+  {key:'6m', label:'6 Mo'},
+  {key:'1y', label:'1 Yr'},
+  {key:'3y', label:'3 Yr'},
+  {key:'5y', label:'5 Yr'},
+];
+
+function toggleReturns(){
+  const body=document.getElementById('returnsBody');
+  const arrow=document.getElementById('returnsArrow');
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  arrow.textContent=open?'▶':'▼';
+  try{
+    const cfg=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+    cfg.returnsClosed=open;
+    localStorage.setItem(STORE_KEY,JSON.stringify(cfg));
+  }catch(e){}
+}
+
+async function fetchChartRanged(sym,range,interval){
+  const url=`${YAHOO_BASE}/${encodeURIComponent(sym)}?range=${range}&interval=${interval}`;
+  try{
+    const resp=await fetch(url,{headers:YAHOO_HDR});
+    if(!resp.ok) return null;
+    const json=await resp.json();
+    return json?.chart?.result?.[0]||null;
+  }catch(e){ return null; }
+}
+
+function calcPeriodReturn(data,targetMs,maxGapDays=30){
+  if(!data) return null;
+  const ts=data.timestamp||[];
+  const cl=data.indicators?.quote?.[0]?.close||[];
+  const pts=[];
+  for(let i=0;i<ts.length;i++){
+    if(cl[i]!=null&&cl[i]>0) pts.push({t:ts[i]*1000,c:cl[i]});
+  }
+  if(pts.length<2) return null;
+  // If the earliest data starts more than maxGapDays after the target date,
+  // the ticker didn't exist then — return null rather than misrepresenting
+  // a shorter period as the full requested one.
+  if(pts[0].t > targetMs + maxGapDays*86400000) return null;
+  const last=pts[pts.length-1].c;
+  let startClose=null;
+  for(const p of pts){ if(p.t>=targetMs){ startClose=p.c; break; } }
+  if(!startClose) startClose=pts[0].c;
+  return (last-startClose)/startClose*100;
+}
+
+function msAgo(months,years,days){
+  const d=new Date();
+  if(years)  d.setFullYear(d.getFullYear()-years);
+  if(months) d.setMonth(d.getMonth()-months);
+  if(days)   d.setDate(d.getDate()-days);
+  return d.getTime();
+}
+
+async function fetchTickerReturns(sym){
+  const [daily,monthly]=await Promise.all([
+    fetchChartRanged(sym,'1y','1d'),
+    fetchChartRanged(sym,'5y','1mo'),
+  ]);
+  const name=daily?.meta?.shortName||daily?.meta?.longName||
+             monthly?.meta?.shortName||monthly?.meta?.longName||sym;
+  const ytdMs=new Date(new Date().getFullYear(),0,1).getTime();
+  return{
+    sym, name,
+    returns:{
+      ytd: calcPeriodReturn(daily,  ytdMs),
+      '5d':calcPeriodReturn(daily,  msAgo(0,0,5)),
+      '1m': calcPeriodReturn(daily,  msAgo(1)),
+      '3m': calcPeriodReturn(daily,  msAgo(3)),
+      '6m': calcPeriodReturn(daily,  msAgo(6)),
+      '1y': calcPeriodReturn(daily,  msAgo(0,1)),
+      '3y': calcPeriodReturn(monthly,msAgo(0,3),60),
+      '5y': calcPeriodReturn(monthly,msAgo(0,5),60),
+    }
+  };
+}
+
+function fmtRet(v){
+  if(v==null) return '<span class="ret-na">--</span>';
+  const cls=v>0?'ret-pos':v<0?'ret-neg':'';
+  const str=(v>0?'+':'')+v.toFixed(2)+'%';
+  return cls?`<span class="${cls}">${str}</span>`:str;
+}
+
+function renderReturnsTable(){
+  const thead=document.getElementById('returnsThead');
+  const tbody=document.getElementById('returnsTbody');
+  const tbl=document.getElementById('returnsTable');
+  if(!thead||!tbody||!tbl) return;
+  let rows=[...rtData];
+  if(rtSortCol!==null){
+    rows.sort((a,b)=>{
+      let av,bv;
+      if(rtSortCol==='sym'){ av=a.sym; bv=b.sym; }
+      else if(rtSortCol==='name'){ av=a.name; bv=b.name; }
+      else{ av=a.returns[rtSortCol]; bv=b.returns[rtSortCol]; }
+      if(av==null&&bv==null) return 0;
+      if(av==null) return 1; if(bv==null) return -1;
+      return typeof av==='string'?av.localeCompare(bv)*rtSortDir:(av-bv)*rtSortDir;
+    });
+  }
+  const cols=[
+    {key:'sym',  label:'Symbol'},
+    {key:'name', label:'Name'},
+    ...RT_PERIODS.map(p=>({key:p.key,label:p.label})),
+  ];
+  thead.innerHTML=`<tr>${cols.map(c=>{
+    const cls=rtSortCol===c.key?(rtSortDir===1?'sort-asc':'sort-desc'):'';
+    return `<th class="${cls}" onclick="rtSort('${c.key}')">${c.label}</th>`;
+  }).join('')}</tr>`;
+  tbody.innerHTML=rows.map(r=>`<tr>
+    <td><a class="ret-sym-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(r.sym)}/" target="_blank" rel="noopener">${r.sym}</a></td>
+    <td title="${r.name.replace(/"/g,'&quot;')}">${r.name}</td>
+    ${RT_PERIODS.map(p=>`<td>${fmtRet(r.returns[p.key])}</td>`).join('')}
+  </tr>`).join('');
+  tbl.style.display='';
+}
+
+function rtSort(col){
+  if(rtSortCol===col) rtSortDir*=-1; else{ rtSortCol=col; rtSortDir=1; }
+  renderReturnsTable();
+}
+
+async function loadReturnsTable(tickers){
+  const loading=document.getElementById('returnsLoading');
+  const tbl=document.getElementById('returnsTable');
+  if(!loading||!tbl) return;
+  if(!tickers||!tickers.length){
+    loading.textContent='Enter tickers to see returns.';
+    loading.style.display='';
+    tbl.style.display='none';
+    return;
+  }
+  loading.textContent='Loading returns…';
+  loading.style.display='';
+  tbl.style.display='none';
+  rtData=await Promise.all(tickers.map(sym=>fetchTickerReturns(sym)));
+  loading.style.display='none';
+  renderReturnsTable();
+}
+
+function initReturnsTable(){
+  try{
+    const cfg=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+    if(cfg.returnsClosed){
+      document.getElementById('returnsBody').style.display='none';
+      document.getElementById('returnsArrow').textContent='▶';
+    }
+  }catch(e){}
+  const tickers=[0,1,2,3,4].map(i=>document.getElementById('t'+i)?.value.trim().toUpperCase()||'').filter(Boolean);
+  loadReturnsTable(tickers);
 }
 </script>
 <div class="save-flash" id="saveFlash">✓ Settings saved</div>
