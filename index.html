@@ -369,6 +369,8 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
       oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')loadHoldings()">
     <button class="load-btn" id="loadHoldingsBtn" onclick="loadHoldings()">Load Holdings</button>
   </div>
+  <div class="sec-label" style="margin-bottom:8px;margin-top:4px">Compare Against (optional) — click dot to change colour</div>
+  <div class="ticker-row" id="etfExtraRow" style="grid-template-columns:repeat(2,1fr);max-width:400px;margin-bottom:16px;"></div>
   <div id="holdingsPanel" style="display:none">
     <div class="etf-info-bar" id="etfInfoBar"></div>
     <div class="holdings-section">
@@ -488,6 +490,8 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <div class="card" id="card2"></div>
   <div class="card" id="card3"></div>
   <div class="card" id="card4"></div>
+  <div class="card" id="card5"></div>
+  <div class="card" id="card6"></div>
 </div>
 
 <!-- #4 Event log — collapsible -->
@@ -554,6 +558,8 @@ let activePreset = '1Y';
 let appMode      = 'manual'; // 'manual' | 'etf'
 let etfHoldings  = [];       // [{symbol, name, percent, checked}]
 let etfTickerSym = '';
+let etfExtraColours   = ['#a8d8ea', '#c77dff'];
+let openEtfExtraPicker = null;
 
 // ── Theme (dark/light mode) ────────────────────────────────────────────────────
 const THEME_KEY = 'trc_theme_v1';
@@ -605,6 +611,8 @@ function saveSettings(){
       showVlines:document.getElementById('showVlines')?.checked??true,
       activeIdxKeys:Object.keys(activeIndices),
       activePreset,
+      etfExtraColours:[...etfExtraColours],
+      etfExtraSymbols:[0,1].map(j=>document.getElementById('etfExtra'+j)?.value||''),
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(cfg));
     // Flash the save indicator
@@ -652,6 +660,13 @@ function loadSettings(){
     // Restore active preset — recalculates dates from today; clears highlight if user had custom dates
     if(cfg.activePreset) setPreset(cfg.activePreset);
     else clearPresetHighlight();
+    // ETF extra tickers
+    if(Array.isArray(cfg.etfExtraColours)&&cfg.etfExtraColours.length===2){
+      cfg.etfExtraColours.forEach((c,j)=>applyEtfExtraColour(j,c));
+    }
+    if(Array.isArray(cfg.etfExtraSymbols)){
+      cfg.etfExtraSymbols.forEach((v,j)=>{ const el=document.getElementById('etfExtra'+j); if(el) el.value=v; });
+    }
   }catch(e){ console.warn('Could not load settings:', e); }
 }
 
@@ -660,9 +675,9 @@ function clearAll(){
   allData=[]; allEvents=[]; stockNames={}; visible=[true,true,true,true,true];
   if(chartInst){ chartInst.destroy(); chartInst=null; }
   document.getElementById('chartEmpty').style.display='flex';
-  for(let i=0;i<5;i++){
+  for(let i=0;i<7;i++){
     const card=document.getElementById('card'+i); if(card) card.className='card';
-    const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis');
+    if(i<5){ const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis'); }
   }
   // Remove dynamically-created legend items (from ETF mode)
   document.getElementById('legend').querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
@@ -681,6 +696,12 @@ function clearAll(){
     const sc=document.getElementById('sw'+i);
     if(sc) sc.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.title===c));
     const ld=document.getElementById('leg'+i+'-dot'); if(ld) ld.style.background=c;
+  });
+  // Reset ETF extra tickers
+  const DEFAULT_EXTRA_COLOURS=['#a8d8ea','#c77dff'];
+  [0,1].forEach(j=>{
+    const el=document.getElementById('etfExtra'+j); if(el) el.value='';
+    applyEtfExtraColour(j,DEFAULT_EXTRA_COLOURS[j]);
   });
   // Reset index checkboxes and data
   activeIndices={};
@@ -798,13 +819,19 @@ function buildTickers(){
 }
 loadTheme();      // apply saved theme before building UI
 buildTickers();
+buildEtfExtraTickers();
 setPreset('1Y'); // set default dates before loadSettings may override
 loadSettings();   // restore saved settings (overrides defaults if present)
 
 document.addEventListener('click',e=>{
-  if(openPicker===null) return;
-  const pp=document.getElementById('cpop'+openPicker), dd=document.getElementById('dot'+openPicker);
-  if(pp&&!pp.contains(e.target)&&e.target!==dd){ pp.classList.remove('open'); openPicker=null; }
+  if(openPicker!==null){
+    const pp=document.getElementById('cpop'+openPicker), dd=document.getElementById('dot'+openPicker);
+    if(pp&&!pp.contains(e.target)&&e.target!==dd){ pp.classList.remove('open'); openPicker=null; }
+  }
+  if(openEtfExtraPicker!==null){
+    const pp=document.getElementById('etfExtraCpop'+openEtfExtraPicker), dd=document.getElementById('etfExtraDot'+openEtfExtraPicker);
+    if(pp&&!pp.contains(e.target)&&e.target!==dd){ pp.classList.remove('open'); openEtfExtraPicker=null; }
+  }
 });
 function togglePicker(i,e){
   e.stopPropagation();
@@ -1102,7 +1129,7 @@ function renderCards(){
     // Hide card if ticker series is hidden via legend click
     if(!visible[i]){ card.className='card'; return; }
     card.className='card vis';
-    const c=colours[i]||PALETTE[i%PALETTE.length], pn=n=>n>=0?'p':'n';
+    const c=(d._isExtra?etfExtraColours[d._extraIdx]:null)||colours[i]||PALETTE[i%PALETTE.length], pn=n=>n>=0?'p':'n';
     const cagrStr=d.cagr!=null?fmtPct(d.cagr)+' / yr CAGR':'—';
     const divEvs=d.rawEvents.filter(e=>e.type==='div').sort((a,b)=>a.date.localeCompare(b.date));
     const splitEvs=d.rawEvents.filter(e=>e.type==='split').sort((a,b)=>a.date.localeCompare(b.date));
@@ -1152,7 +1179,7 @@ function renderCards(){
       <div class="card-final" style="color:${c}">${fmt$(d.last.total)}</div>
       <div class="card-sub" style="color:${c}">${cagrStr}</div>`;
   });
-  for(let i=allData.length;i<5;i++){
+  for(let i=allData.length;i<7;i++){
     const card=document.getElementById('card'+i); if(card) card.className='card';
   }
 }
@@ -1293,13 +1320,13 @@ function renderChartWithIndices(){
   // Rebuild allEvents from allData only (not indices — they have no events)
   allEvents=[];
   allData.forEach((d,i)=>{
-    const col=colours[i]||PALETTE[i%PALETTE.length];
+    const col=(d._isExtra?etfExtraColours[d._extraIdx]:null)||colours[i]||PALETTE[i%PALETTE.length];
     d.rawEvents.forEach(ev=>allEvents.push({...ev,colour:col}));
   });
 
   // Ticker datasets (using allData + visible[])
   const tickerDatasets = allData.map((d,i)=>{
-    const col=colours[i]||PALETTE[i%PALETTE.length];
+    const col=(d._isExtra?etfExtraColours[d._extraIdx]:null)||colours[i]||PALETTE[i%PALETTE.length];
     const map={}; d.series.forEach(p=>{map[p.date]=p;});
     let last=null;
     const vals=labels.map(l=>{ if(map[l]) last=map[l]; return last?getVal(last,d.inv):null; });
@@ -1460,7 +1487,7 @@ function renderChartWithIndices(){
   // Remove previously created dynamic items before rebuilding
   legendEl.querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
   allData.forEach((d,i)=>{
-    const col=colours[i]||PALETTE[i%PALETTE.length];
+    const col=(d._isExtra?etfExtraColours[d._extraIdx]:null)||colours[i]||PALETTE[i%PALETTE.length];
     let leg=document.getElementById('leg'+i);
     if(!leg){
       // Series slot ≥5: create a dynamic legend pill
@@ -1491,11 +1518,63 @@ function renderChartWithIndices(){
     const col=cfg?cfg.colour:'#aaa';
     const pill=document.createElement('div');
     pill.className='leg-item vis idx-leg-item';
-    pill.style.cursor='default';
-    pill.style.opacity='0.75';
+    pill.title='Click to remove';
     pill.innerHTML=`<div class="leg-dot" style="background:${col};opacity:.7;"></div><span style="font-style:italic">${d.sym}</span>`;
+    pill.onclick=()=>{
+      const cb=document.getElementById('idx-'+d.indexKey);
+      if(cb) cb.checked=false;
+      toggleIndex(d.indexKey,false);
+    };
     legendEl.appendChild(pill);
   });
+}
+
+// ── ETF extra comparison tickers ──────────────────────────────────────────────
+function buildEtfExtraTickers(){
+  const row=document.getElementById('etfExtraRow'); row.innerHTML='';
+  for(let j=0;j<2;j++){
+    const c=etfExtraColours[j], wrap=document.createElement('div');
+    wrap.className='ticker-wrap'; wrap.id='etfExtraWrap'+j;
+    wrap.innerHTML=`
+      <div class="ticker-dot" id="etfExtraDot${j}" style="background:${c}" onclick="toggleEtfExtraPicker(${j},event)" title="Change colour"></div>
+      <div class="cpop" id="etfExtraCpop${j}">
+        <div class="cpop-label">Choose colour</div>
+        <div class="swatches" id="etfExtraSw${j}"></div>
+        <div class="cpop-custom-label">Custom</div>
+        <input type="color" class="cpop-native" id="etfExtraNat${j}" value="${c}" oninput="applyEtfExtraColour(${j},this.value)">
+      </div>
+      <input class="ticker-input" id="etfExtra${j}" placeholder="${['VOO','SPY'][j]}" maxlength="10"
+        oninput="this.value=this.value.toUpperCase();saveSettings()" onkeydown="if(event.key==='Enter')runAnalysis()">`;
+    row.appendChild(wrap);
+    setTimeout(()=>{
+      const sc=document.getElementById('etfExtraSw'+j);
+      PALETTE.forEach(pc=>{
+        const s=document.createElement('div');
+        s.className='swatch'+(pc===c?' sel':'');
+        s.style.background=pc; s.title=pc;
+        s.onclick=()=>applyEtfExtraColour(j,pc);
+        sc.appendChild(s);
+      });
+    },0);
+  }
+}
+
+function toggleEtfExtraPicker(j,e){
+  e.stopPropagation();
+  if(openPicker!==null){ document.getElementById('cpop'+openPicker)?.classList.remove('open'); openPicker=null; }
+  if(openEtfExtraPicker!==null&&openEtfExtraPicker!==j) document.getElementById('etfExtraCpop'+openEtfExtraPicker)?.classList.remove('open');
+  const pp=document.getElementById('etfExtraCpop'+j), was=pp.classList.contains('open');
+  pp.classList.toggle('open',!was); openEtfExtraPicker=was?null:j;
+}
+
+function applyEtfExtraColour(j,c){
+  etfExtraColours[j]=c;
+  const dot=document.getElementById('etfExtraDot'+j); if(dot) dot.style.background=c;
+  const nat=document.getElementById('etfExtraNat'+j); if(nat) nat.value=c;
+  const sc=document.getElementById('etfExtraSw'+j);
+  if(sc) sc.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.title===c));
+  if(allData.length){ renderChartWithIndices(); renderCards(); }
+  saveSettings();
 }
 
 // ── ETF Holdings mode ─────────────────────────────────────────────────────────
@@ -1510,9 +1589,9 @@ function setAppMode(mode){
   visible=[true,true,true,true,true];
   if(chartInst){ chartInst.destroy(); chartInst=null; }
   document.getElementById('chartEmpty').style.display='flex';
-  for(let i=0;i<5;i++){
+  for(let i=0;i<7;i++){
     const card=document.getElementById('card'+i); if(card) card.className='card';
-    const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis');
+    if(i<5){ const leg=document.getElementById('leg'+i); if(leg) leg.classList.remove('vis'); }
   }
   document.getElementById('legend').querySelectorAll('.dyn-leg-item').forEach(el=>el.remove());
   document.getElementById('evTableSection').style.display='none';
@@ -1658,6 +1737,7 @@ async function runEtfAnalysis(){
   if(!sd||!ed||sd>=ed){ setSt('Invalid date range.','error'); btn.disabled=false; return; }
   const p1=toUnix(sd), p2=toUnix(ed)+86400;
   const tickers=[etfTickerSym,...checked.map(h=>h.symbol)];
+  const extraSymbols=[0,1].map(j=>document.getElementById('etfExtra'+j)?.value.trim().toUpperCase()||'').filter(Boolean);
   const errors=[];
   for(let i=0;i<tickers.length;i++){
     const sym=tickers[i];
@@ -1670,10 +1750,27 @@ async function runEtfAnalysis(){
       allData.push(processYahooPriceOnly(result,sym));
     }catch(e){ errors.push(`${sym}: ${e.message}`); }
   }
+  for(let j=0;j<extraSymbols.length;j++){
+    const sym=extraSymbols[j];
+    try{
+      setSt(`Fetching extra ticker ${sym}...`,'loading');
+      await sleep(400);
+      const result=await fetchYahoo(sym,p1,p2);
+      const meta=result.meta||{};
+      stockNames[sym]=meta.longName||meta.shortName||sym;
+      const d=processYahooPriceOnly(result,sym);
+      d._isExtra=true; d._extraIdx=j;
+      allData.push(d);
+    }catch(e){ errors.push(`${sym}: ${e.message}`); }
+  }
   btn.disabled=false;
   if(!allData.length){ setSt('All fetches failed:\n'+errors.join('\n'),'error'); return; }
   visible=allData.map(()=>true);
-  let statusMsg=`✓ ${etfTickerSym} + ${allData.length-1} holding${allData.length!==2?'s':''} — price return only`;
+  const holdingCount=allData.filter(d=>!d._isExtra).length-1;
+  const extraCount=allData.filter(d=>d._isExtra).length;
+  let statusMsg=`✓ ${etfTickerSym} + ${holdingCount} holding${holdingCount!==1?'s':''}`;
+  if(extraCount) statusMsg+=` + ${extraCount} extra ticker${extraCount!==1?'s':''}`;
+  statusMsg+=' — price return only';
   if(errors.length) statusMsg+='\n✗ Failed: '+errors.join(' | ');
   setSt(statusMsg,errors.length?'loading':'ok');
   renderChartWithIndices();
