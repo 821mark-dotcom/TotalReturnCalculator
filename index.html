@@ -428,6 +428,7 @@ input[type="date"]:focus,.inv-input:focus,.sel-input:focus{border-color:var(--ac
   <div class="title">Total Return Calculator</div>
   <div class="subtitle">Yahoo Finance · Price + Dividends + Splits · DRIP Reinvested</div>
   <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <button class="howto-btn" onclick="openMission()" title="The Mission">🚀<span class="btn-label"> Mission</span></button>
     <button class="howto-btn" onclick="openHowTo()" title="How to use this app"><span style="color:var(--accent)">?</span><span class="btn-label"> HowTo</span></button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode"><span class="btn-icon">🌙</span><span class="btn-label"> Dark</span></button>
   </div>
@@ -2273,7 +2274,12 @@ function initReturnsTable(){
 function openHowTo(){document.getElementById('howtoOverlay').classList.add('open');}
 function closeHowTo(){document.getElementById('howtoOverlay').classList.remove('open');}
 function closeHowToOutside(e){if(e.target===document.getElementById('howtoOverlay'))closeHowTo();}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHowTo();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeHowTo();closeMission();}});
+
+// ── Mission modal ─────────────────────────────────────────────────────────────
+function openMission(){document.getElementById('missionOverlay').classList.add('open');}
+function closeMission(){document.getElementById('missionOverlay').classList.remove('open');}
+function closeMissionOutside(e){if(e.target===document.getElementById('missionOverlay'))closeMission();}
 
 // ── Returns table name-cell tooltip ──────────────────────────────────────────
 (function(){
@@ -2309,6 +2315,38 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHowTo()
 })();
 </script>
 <div class="save-flash" id="saveFlash">✓ Settings saved</div>
+
+<!-- Mission Modal -->
+<div class="howto-overlay" id="missionOverlay" onclick="closeMissionOutside(event)">
+  <div class="howto-modal">
+    <button class="howto-close" onclick="closeMission()" title="Close">✕</button>
+    <div class="howto-title">🚀 The Mission</div>
+    <div class="howto-section">
+      <div class="howto-section-desc">Vibe coding has unlocked dreams, ideas, and desires manifesting since my first job. Associated with work-trauma, having to beg the architecture team to build me a 'test harness' to inject XML, to automated UI testing, I've tinkered in C, C++, Excel formulas but never dived in. This is my first set of tools that I use regularly.</div>
+      <div class="howto-section-desc">This also forces me to learn/practice/exercise technical things I should've probably absorbed: GitHub, UX design principles, architecture and design, etc.</div>
+    </div>
+    <div class="howto-section">
+      <div class="howto-section-title">The Toolset</div>
+      <div class="howto-section-desc">Currently 3 distinct tools mashed together:</div>
+      <ol class="howto-steps">
+        <li data-n="1">Calculate total return on DRIP scenarios <span style="color:var(--txt-lo)">(helps with analyzing covered-call ETFs)</span></li>
+        <li data-n="2">Create a chart/table for a given basket of tickers for quick return analysis</li>
+        <li data-n="3">ETF dissection: Chart its top holdings; better off getting the top winners vs the basket?</li>
+      </ol>
+      <div class="howto-section-desc" style="margin-top:12px;">It presents data — no AI capabilities to analyze or give recommendations. This is purely a tool.</div>
+      <div class="howto-section-desc">Capabilities will be added incrementally — technical analysis indicators are better off in a real tool, such as TradingView.</div>
+    </div>
+    <div class="howto-section">
+      <div class="howto-section-title">The Tech Stack</div>
+      <ol class="howto-steps">
+        <li data-n="▪">Fully-contained in a single HTML file</li>
+        <li data-n="▪">Yahoo Finance API for data</li>
+        <li data-n="▪">CloudFlare Worker <span style="color:var(--txt-lo)">(to bypass CORS)</span></li>
+      </ol>
+    </div>
+    <div class="howto-tip" style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">You may or may not find this useful. Have fun.</div>
+  </div>
+</div>
 
 <!-- HowTo Modal -->
 <div class="howto-overlay" id="howtoOverlay" onclick="closeHowToOutside(event)">
