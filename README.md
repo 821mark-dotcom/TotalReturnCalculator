@@ -45,6 +45,10 @@ Interactive overlay chart, dollar/% toggle, customizable colours, date range pre
 Yahoo Finance's unofficial v8 chart API, proxied through a Cloudflare Worker —
 no CORS extension required, works on mobile and any browser.
 
+If you fork or self-host this app, you'll need to deploy your own Worker and update
+two constants in `index.html`. See [CLOUDFLARE_WORKER.md](CLOUDFLARE_WORKER.md) for
+the full explanation, the Worker script, and step-by-step setup instructions.
+
 ## Usage
 
 1. Download `index.html` (or clone this repo)
